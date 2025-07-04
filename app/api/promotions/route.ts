@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Log da requisição para debug
-    console.error('Request data:', { title, price, price_from, storeName, affiliateLink, coupon });
+    console.error('Request data:', { title: title || 'undefined', price: price || 'undefined', price_from: price_from || 'undefined', storeName: storeName || 'undefined', affiliateLink: affiliateLink || 'undefined', coupon: coupon || 'undefined' });
     
     return NextResponse.json({ 
       error: 'Internal server error',
