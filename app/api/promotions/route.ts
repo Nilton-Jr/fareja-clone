@@ -4,7 +4,7 @@ import { scrapeProductImage } from '@/lib/scraper';
 import { generateShortId } from '@/lib/shortId';
 
 export async function POST(request: NextRequest) {
-  let title: string, price: string, price_from: string, storeName: string, affiliateLink: string, coupon: string;
+  let requestBody: any = {};
   
   try {
     console.log('Starting promotion creation...');
@@ -18,9 +18,10 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+    requestBody = body;
     console.log('Request body received:', body);
     
-    ({ title, price, price_from, storeName, affiliateLink, coupon } = body);
+    const { title, price, price_from, storeName, affiliateLink, coupon } = body;
 
     if (!title || !price || !storeName || !affiliateLink) {
       console.log('Missing required fields:', { title: !!title, price: !!price, storeName: !!storeName, affiliateLink: !!affiliateLink });
@@ -83,16 +84,8 @@ export async function POST(request: NextRequest) {
       console.error('Error stack:', error.stack);
     }
     
-    // Log da requisição para debug (safe access)
-    const requestData = {
-      title: typeof title !== 'undefined' ? title : 'undefined',
-      price: typeof price !== 'undefined' ? price : 'undefined',
-      price_from: typeof price_from !== 'undefined' ? price_from : 'undefined',
-      storeName: typeof storeName !== 'undefined' ? storeName : 'undefined',
-      affiliateLink: typeof affiliateLink !== 'undefined' ? affiliateLink : 'undefined',
-      coupon: typeof coupon !== 'undefined' ? coupon : 'undefined'
-    };
-    console.error('Request data:', requestData);
+    // Log da requisição para debug
+    console.error('Request data:', requestBody);
     
     return NextResponse.json({ 
       error: 'Internal server error',
