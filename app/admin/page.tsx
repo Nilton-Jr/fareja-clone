@@ -30,6 +30,12 @@ export default function AdminPage() {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [loadingList, setLoadingList] = useState(false);
   const [activeTab, setActiveTab] = useState<'add' | 'list'>('add');
+  const [dateDeleteForm, setDateDeleteForm] = useState({
+    startDay: '',
+    endDay: '',
+    month: '',
+    year: new Date().getFullYear().toString()
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -199,6 +205,77 @@ export default function AdminPage() {
     } finally {
       setLoadingList(false);
     }
+  };
+
+  const deletePromotionsByDate = async () => {
+    const { startDay, endDay, month, year } = dateDeleteForm;
+    
+    if (!startDay || !endDay || !month) {
+      setMessage('❌ Por favor, preencha todos os campos de data.');
+      return;
+    }
+
+    const startDayNum = parseInt(startDay);
+    const endDayNum = parseInt(endDay);
+    const monthNum = parseInt(month);
+
+    if (startDayNum < 1 || startDayNum > 31 || endDayNum < 1 || endDayNum > 31) {
+      setMessage('❌ Dias devem estar entre 1 e 31.');
+      return;
+    }
+
+    if (monthNum < 1 || monthNum > 12) {
+      setMessage('❌ Mês deve estar entre 1 e 12.');
+      return;
+    }
+
+    if (startDayNum > endDayNum) {
+      setMessage('❌ O dia inicial não pode ser maior que o dia final.');
+      return;
+    }
+
+    const dateRange = `${startDay}/${month}/${year} até ${endDay}/${month}/${year}`;
+    
+    if (!confirm(`⚠️ ATENÇÃO: Tem certeza que deseja deletar todas as promoções do período ${dateRange}? Esta ação não pode ser desfeita!`)) {
+      return;
+    }
+
+    setLoadingList(true);
+    try {
+      const params = new URLSearchParams({
+        startDay,
+        endDay,
+        month,
+        year
+      });
+
+      const response = await fetch(`/api/promotions?${params}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${formData.apiKey}`
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setMessage(`✅ Promoções deletadas com sucesso! Período: ${result.dateRange}, Total: ${result.deletedCount}`);
+        fetchPromotions(); // Reload the list
+      } else {
+        const error = await response.json();
+        setMessage(`Erro ao deletar promoções por data: ${error.error}`);
+      }
+    } catch (error) {
+      setMessage('Erro de conexão ao deletar promoções por data.');
+    } finally {
+      setLoadingList(false);
+    }
+  };
+
+  const handleDateDeleteChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setDateDeleteForm({
+      ...dateDeleteForm,
+      [e.target.name]: e.target.value
+    });
   };
 
   useEffect(() => {
@@ -383,6 +460,97 @@ export default function AdminPage() {
                       >
                         🗑️ Deletar Tudo
                       </button>
+                    </div>
+                  </div>
+                  
+                  {/* Date Range Delete Section */}
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                    <h3 className="text-lg font-semibold text-red-800 mb-3">🗓️ Deletar por Período</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
+                      <div>
+                        <label className="block text-sm font-medium text-red-700 mb-1">
+                          Dia Inicial
+                        </label>
+                        <input
+                          type="number"
+                          name="startDay"
+                          min="1"
+                          max="31"
+                          value={dateDeleteForm.startDay}
+                          onChange={handleDateDeleteChange}
+                          className="w-full px-3 py-2 border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                          placeholder="1"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-red-700 mb-1">
+                          Dia Final
+                        </label>
+                        <input
+                          type="number"
+                          name="endDay"
+                          min="1"
+                          max="31"
+                          value={dateDeleteForm.endDay}
+                          onChange={handleDateDeleteChange}
+                          className="w-full px-3 py-2 border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                          placeholder="31"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-red-700 mb-1">
+                          Mês
+                        </label>
+                        <select
+                          name="month"
+                          value={dateDeleteForm.month}
+                          onChange={handleDateDeleteChange}
+                          className="w-full px-3 py-2 border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                        >
+                          <option value="">Selecione</option>
+                          <option value="1">Janeiro</option>
+                          <option value="2">Fevereiro</option>
+                          <option value="3">Março</option>
+                          <option value="4">Abril</option>
+                          <option value="5">Maio</option>
+                          <option value="6">Junho</option>
+                          <option value="7">Julho</option>
+                          <option value="8">Agosto</option>
+                          <option value="9">Setembro</option>
+                          <option value="10">Outubro</option>
+                          <option value="11">Novembro</option>
+                          <option value="12">Dezembro</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-red-700 mb-1">
+                          Ano
+                        </label>
+                        <input
+                          type="number"
+                          name="year"
+                          min="2020"
+                          max="2030"
+                          value={dateDeleteForm.year}
+                          onChange={handleDateDeleteChange}
+                          className="w-full px-3 py-2 border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={deletePromotionsByDate}
+                        disabled={loadingList || !dateDeleteForm.startDay || !dateDeleteForm.endDay || !dateDeleteForm.month}
+                        className="bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white px-4 py-2 rounded text-sm font-medium"
+                      >
+                        🗑️ Deletar Período
+                      </button>
+                      <span className="text-sm text-red-600">
+                        {dateDeleteForm.startDay && dateDeleteForm.endDay && dateDeleteForm.month ? 
+                          `Irá deletar de ${dateDeleteForm.startDay}/${dateDeleteForm.month}/${dateDeleteForm.year} até ${dateDeleteForm.endDay}/${dateDeleteForm.month}/${dateDeleteForm.year}` :
+                          'Preencha os campos para visualizar o período'
+                        }
+                      </span>
                     </div>
                   </div>
                   

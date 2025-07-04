@@ -189,6 +189,33 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     const deleteAll = searchParams.get('deleteAll');
+    const startDay = searchParams.get('startDay');
+    const endDay = searchParams.get('endDay');
+    const month = searchParams.get('month');
+    const year = searchParams.get('year');
+
+    // Delete by date range
+    if (startDay && endDay && month && year) {
+      const startDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(startDay));
+      const endDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(endDay) + 1); // +1 to include the end day
+      
+      console.log(`Deleting promotions from ${startDate.toISOString()} to ${endDate.toISOString()}`);
+      
+      const deletedCount = await prisma.promotion.deleteMany({
+        where: {
+          createdAt: {
+            gte: startDate,
+            lt: endDate
+          }
+        }
+      });
+      
+      return NextResponse.json({ 
+        message: `Promotions deleted successfully from ${startDay}/${month}/${year} to ${endDay}/${month}/${year}. Count: ${deletedCount.count}`,
+        deletedCount: deletedCount.count,
+        dateRange: `${startDay}/${month}/${year} - ${endDay}/${month}/${year}`
+      });
+    }
 
     // Delete all promotions
     if (deleteAll === 'true') {
