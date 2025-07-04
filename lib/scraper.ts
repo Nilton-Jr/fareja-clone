@@ -139,22 +139,7 @@ export async function scrapeProductImage(productUrl: string, shortId?: string): 
  * Otimiza imagem para WhatsApp se shortId for fornecido
  */
 async function optimizeImageForWhatsApp(imageUrl: string, shortId?: string): Promise<string> {
-  // Se não temos shortId, retorna a URL original
-  if (!shortId) {
-    return imageUrl;
-  }
-
-  try {
-    // Tenta converter para WebP otimizado
-    const optimizedImage = await convertToWebP(imageUrl, shortId);
-    
-    if (optimizedImage) {
-      return optimizedImage.webpUrl;
-    }
-  } catch (error) {
-    console.error('Erro ao otimizar imagem:', error);
-  }
-
-  // Fallback para imagem original
+  // No Vercel, retorna diretamente a URL original pois não podemos salvar arquivos
+  // A otimização será feita pelo Next.js Image component
   return imageUrl;
 }
