@@ -138,3 +138,30 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const authHeader = request.headers.get('authorization');
+    const expectedAuth = `Bearer ${process.env.API_SECRET_KEY}`;
+    
+    if (!authHeader || authHeader !== expectedAuth) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+    }
+
+    const deletedPromotion = await prisma.promotion.delete({
+      where: { id }
+    });
+
+    return NextResponse.json({ message: 'Promotion deleted successfully', deletedPromotion });
+  } catch (error) {
+    console.error('Error deleting promotion:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
