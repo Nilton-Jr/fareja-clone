@@ -83,8 +83,16 @@ export async function POST(request: NextRequest) {
       console.error('Error stack:', error.stack);
     }
     
-    // Log da requisição para debug
-    console.error('Request data:', { title: title || 'undefined', price: price || 'undefined', price_from: price_from || 'undefined', storeName: storeName || 'undefined', affiliateLink: affiliateLink || 'undefined', coupon: coupon || 'undefined' });
+    // Log da requisição para debug (safe access)
+    const requestData = {
+      title: typeof title !== 'undefined' ? title : 'undefined',
+      price: typeof price !== 'undefined' ? price : 'undefined',
+      price_from: typeof price_from !== 'undefined' ? price_from : 'undefined',
+      storeName: typeof storeName !== 'undefined' ? storeName : 'undefined',
+      affiliateLink: typeof affiliateLink !== 'undefined' ? affiliateLink : 'undefined',
+      coupon: typeof coupon !== 'undefined' ? coupon : 'undefined'
+    };
+    console.error('Request data:', requestData);
     
     return NextResponse.json({ 
       error: 'Internal server error',
