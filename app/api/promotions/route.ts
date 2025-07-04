@@ -54,6 +54,20 @@ export async function POST(request: NextRequest) {
       console.log('Using default image');
     }
 
+    // Check if affiliate link already exists
+    console.log('Checking for existing affiliate link...');
+    const existingPromotion = await prisma.promotion.findUnique({
+      where: { affiliateLink }
+    });
+
+    if (existingPromotion) {
+      console.log('Affiliate link already exists, returning existing promotion:', existingPromotion.id);
+      return NextResponse.json({
+        ...existingPromotion,
+        siteLink: `${request.nextUrl.origin}/p/${existingPromotion.shortId}`
+      }, { status: 200 }); // Return 200 instead of 201 for existing
+    }
+
     // Save to database
     console.log('Saving to database...');
     const promotion = await prisma.promotion.create({
