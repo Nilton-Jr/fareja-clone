@@ -114,7 +114,7 @@ export default function PromotionCard({ promotion }: PromotionCardProps) {
               </span>
             </div>
             
-            {promotion.coupon && (
+            {promotion.coupon && promotion.coupon.trim() !== '' && promotion.coupon.toLowerCase() !== 'nan' && (
               <div className="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded">
                 Cupom: {promotion.coupon}
               </div>
