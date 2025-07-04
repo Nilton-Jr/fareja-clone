@@ -7,16 +7,23 @@ export async function scrapeProductImage(productUrl: string, shortId?: string): 
   console.log('Tentando fazer scraping de:', productUrl);
   
   try {
+    // Timeout mais curto para evitar problemas no Vercel
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 segundos
+    
     // Tentar usar fetch simples para pegar o HTML
     const response = await fetch(productUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
       },
-      signal: AbortSignal.timeout(10000) // 10 segundos timeout
+      signal: controller.signal
     });
     
+    clearTimeout(timeoutId);
+    
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+      console.log(`HTTP ${response.status}, usando imagem padrão`);
+      return DEFAULT_IMAGE;
     }
     
     const html = await response.text();

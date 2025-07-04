@@ -27,12 +27,14 @@ export async function POST(request: NextRequest) {
       shortId = generateShortId();
     }
 
-    // Scrape the product image with optimization
+    // Scrape the product image with optimization (com fallback para não quebrar)
     let imageUrl: string;
     try {
       imageUrl = await scrapeProductImage(affiliateLink, shortId);
     } catch (error) {
-      return NextResponse.json({ error: 'Failed to scrape product image' }, { status: 400 });
+      console.error('Erro no scraping, usando imagem padrão:', error);
+      // Usar imagem padrão se scraping falhar - NUNCA quebrar por causa disso
+      imageUrl = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2YzYTc1YyIvPgogIDx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+UHJvZHV0bzwvdGV4dD4KICA8L3N2Zz4=';
     }
 
     // Save to database
