@@ -14,11 +14,13 @@ export default function AdminPage() {
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [errorLog, setErrorLog] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setMessage('');
+    setErrorLog('');
 
     try {
       const response = await fetch('/api/promotions', {
@@ -52,9 +54,44 @@ export default function AdminPage() {
       } else {
         const error = await response.json();
         setMessage(`Erro: ${error.error}`);
+        
+        // Log detalhado do erro
+        const logDetails = {
+          status: response.status,
+          statusText: response.statusText,
+          url: response.url,
+          timestamp: new Date().toISOString(),
+          requestData: {
+            title: formData.title,
+            price: formData.price,
+            price_from: formData.price_from,
+            storeName: formData.storeName,
+            affiliateLink: formData.affiliateLink,
+            coupon: formData.coupon
+          },
+          responseError: error
+        };
+        setErrorLog(JSON.stringify(logDetails, null, 2));
       }
     } catch (error) {
       setMessage(`Erro de conexão: ${error}`);
+      
+      // Log detalhado do erro de conexão
+      const logDetails = {
+        type: 'CONNECTION_ERROR',
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        timestamp: new Date().toISOString(),
+        requestData: {
+          title: formData.title,
+          price: formData.price,
+          price_from: formData.price_from,
+          storeName: formData.storeName,
+          affiliateLink: formData.affiliateLink,
+          coupon: formData.coupon
+        }
+      };
+      setErrorLog(JSON.stringify(logDetails, null, 2));
     } finally {
       setLoading(false);
     }
@@ -211,6 +248,24 @@ export default function AdminPage() {
                   </button>
                 </div>
               )}
+            </div>
+          )}
+
+          {errorLog && (
+            <div className="mt-4 p-3 bg-gray-100 rounded-md">
+              <h3 className="text-sm font-medium text-gray-800 mb-2">📋 Log Detalhado do Erro:</h3>
+              <pre className="text-xs text-gray-700 overflow-auto max-h-40 bg-white p-2 rounded border">
+                {errorLog}
+              </pre>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(errorLog);
+                  alert('Log copiado para a área de transferência!');
+                }}
+                className="mt-2 text-xs bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded"
+              >
+                📋 Copiar Log
+              </button>
             </div>
           )}
 
