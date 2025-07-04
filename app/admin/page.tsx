@@ -168,6 +168,39 @@ export default function AdminPage() {
     }
   };
 
+  const deleteAllPromotions = async () => {
+    if (!confirm('⚠️ ATENÇÃO: Tem certeza que deseja deletar TODAS as promoções? Esta ação não pode ser desfeita!')) {
+      return;
+    }
+
+    if (!confirm('Esta é sua última chance! Confirma que deseja deletar TODAS as promoções?')) {
+      return;
+    }
+
+    setLoadingList(true);
+    try {
+      const response = await fetch('/api/promotions?deleteAll=true', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${formData.apiKey}`
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setMessage(`✅ Todas as promoções foram deletadas! Total: ${result.deletedCount}`);
+        setPromotions([]);
+      } else {
+        const error = await response.json();
+        setMessage(`Erro ao deletar todas as promoções: ${error.error}`);
+      }
+    } catch (error) {
+      setMessage('Erro de conexão ao deletar todas as promoções.');
+    } finally {
+      setLoadingList(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'list' && formData.apiKey) {
       fetchPromotions();
@@ -335,13 +368,22 @@ export default function AdminPage() {
                 <div>
                   <div className="flex justify-between items-center mb-4">
                     <h2 className="text-lg font-semibold">Promoções Cadastradas</h2>
-                    <button
-                      onClick={fetchPromotions}
-                      disabled={loadingList}
-                      className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm"
-                    >
-                      {loadingList ? 'Carregando...' : '🔄 Atualizar'}
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={fetchPromotions}
+                        disabled={loadingList}
+                        className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm"
+                      >
+                        {loadingList ? 'Carregando...' : '🔄 Atualizar'}
+                      </button>
+                      <button
+                        onClick={deleteAllPromotions}
+                        disabled={loadingList || promotions.length === 0}
+                        className="bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white px-3 py-1 rounded text-sm"
+                      >
+                        🗑️ Deletar Tudo
+                      </button>
+                    </div>
                   </div>
                   
                   {loadingList ? (

@@ -36,12 +36,21 @@ export default function PromotionCard({ promotion }: PromotionCardProps) {
   };
 
   const calculateDiscount = () => {
-    if (!promotion.price_from) return null;
+    if (!promotion.price_from || !promotion.price) return null;
     
-    const priceFrom = parseFloat(promotion.price_from.replace(/[^\d,]/g, '').replace(',', '.'));
-    const price = parseFloat(promotion.price.replace(/[^\d,]/g, '').replace(',', '.'));
+    // Handle both string and number formats
+    const cleanPrice = (value: string | number) => {
+      const str = typeof value === 'string' ? value : value.toString();
+      // Remove everything except digits, comma and dot
+      const cleaned = str.replace(/[^\d.,]/g, '');
+      // Replace comma with dot for decimal parsing
+      return parseFloat(cleaned.replace(',', '.'));
+    };
     
-    if (priceFrom && price) {
+    const priceFrom = cleanPrice(promotion.price_from);
+    const price = cleanPrice(promotion.price);
+    
+    if (priceFrom && price && priceFrom > price && priceFrom > 0) {
       const discount = Math.round(((priceFrom - price) / priceFrom) * 100);
       return discount > 0 ? discount : null;
     }
@@ -84,10 +93,7 @@ export default function PromotionCard({ promotion }: PromotionCardProps) {
           </div>
           
           <div className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                {promotion.storeName}
-              </span>
+            <div className="flex items-center justify-end mb-2">
               <span className="text-xs text-gray-500">
                 {formatTimeAgo(promotion.createdAt)}
               </span>

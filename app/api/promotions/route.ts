@@ -68,14 +68,38 @@ export async function POST(request: NextRequest) {
       }, { status: 200 }); // Return 200 instead of 201 for existing
     }
 
+    // Check if same title exists today
+    console.log('Checking for duplicate title today...');
+    const today = new Date();
+    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+    
+    const duplicateTitle = await prisma.promotion.findFirst({
+      where: {
+        title,
+        createdAt: {
+          gte: startOfDay,
+          lt: endOfDay
+        }
+      }
+    });
+
+    if (duplicateTitle) {
+      console.log('Title already exists today, returning existing promotion:', duplicateTitle.id);
+      return NextResponse.json({
+        ...duplicateTitle,
+        siteLink: `${request.nextUrl.origin}/p/${duplicateTitle.shortId}`
+      }, { status: 200 }); // Return existing promotion with same title
+    }
+
     // Save to database
     console.log('Saving to database...');
     const promotion = await prisma.promotion.create({
       data: {
         shortId,
         title,
-        price: price.toString(),
-        price_from: price_from ? price_from.toString() : null,
+        price: price.toFixed(2),
+        price_from: price_from ? price_from.toFixed(2) : null,
         storeName,
         affiliateLink,
         imageUrl,
@@ -164,7 +188,18 @@ export async function DELETE(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
+    const deleteAll = searchParams.get('deleteAll');
 
+    // Delete all promotions
+    if (deleteAll === 'true') {
+      const deletedCount = await prisma.promotion.deleteMany({});
+      return NextResponse.json({ 
+        message: `All promotions deleted successfully. Count: ${deletedCount.count}`,
+        deletedCount: deletedCount.count 
+      });
+    }
+
+    // Delete single promotion
     if (!id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
     }

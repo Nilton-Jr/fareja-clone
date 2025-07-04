@@ -258,6 +258,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     
     // URL segura adicional para WhatsApp
     const secureImageUrl = imageUrl.replace('http://', 'https://');
+    
+    // URL otimizada especificamente para WhatsApp preview
+    const whatsappOptimizedImageUrl = `${baseUrl}/api/whatsapp-image/${shortId}`;
+    const secureWhatsappImageUrl = whatsappOptimizedImageUrl.replace('http://', 'https://');
 
     return {
       title: title,
@@ -276,6 +280,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         
         // IMAGENS OTIMIZADAS PARA WHATSAPP - SEGUINDO MELHORES PRÁTICAS
         images: [
+          {
+            url: whatsappOptimizedImageUrl,
+            secureUrl: secureWhatsappImageUrl,
+            width: 1200,
+            height: 630,
+            alt: promotion.title,
+            type: 'text/html',
+          },
           {
             url: imageUrl,
             secureUrl: secureImageUrl,
