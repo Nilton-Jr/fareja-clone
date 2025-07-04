@@ -60,8 +60,8 @@ export async function POST(request: NextRequest) {
       data: {
         shortId,
         title,
-        price,
-        price_from,
+        price: price.toString(),
+        price_from: price_from ? price_from.toString() : null,
         storeName,
         affiliateLink,
         imageUrl,
