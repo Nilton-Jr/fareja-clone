@@ -274,8 +274,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         url: pageUrl,
         siteName: 'Fareja - As Melhores Promoções',
         locale: 'pt_BR',
-        type: 'product', // Mudança crítica: product ao invés de article
-        publishedTime: promotion.createdAt.toISOString(),
+        type: 'website', // Tipo compatível com Next.js TypeScript
         
         // IMAGEM PRINCIPAL OTIMIZADA PARA WHATSAPP (600x600 WebP)
         images: [
@@ -285,10 +284,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
             width: 600,
             height: 600,
             alt: imageAlt,
-            type: 'image/webp', // Formato otimizado
           }
         ],
-        section: 'Promoções e Ofertas',
       },
       
       // TWITTER CARD PARA OUTRAS PLATAFORMAS
@@ -321,12 +318,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       
       // META TAGS ESPECÍFICAS PARA WHATSAPP E REDES SOCIAIS
       other: {
-        // Product meta tags para melhor SEO e redes sociais
-        'product:price:amount': promotion.price.replace(/[^\d,]/g, '').replace(',', '.'),
-        'product:price:currency': 'BRL',
-        'product:availability': 'in stock',
-        'product:condition': 'new',
-        'product:brand': promotion.storeName,
+        // OpenGraph product-specific tags (para WhatsApp reconhecer como produto)
+        'og:type': 'product',
+        'og:product:price:amount': promotion.price.replace(/[^\d,]/g, '').replace(',', '.'),
+        'og:product:price:currency': 'BRL',
+        'og:product:availability': 'in stock',
+        'og:product:condition': 'new',
+        'og:product:brand': promotion.storeName,
         
         // Meta tags específicas do WhatsApp para garantir preview perfeito
         'og:image:width': '600',
@@ -339,6 +337,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         'twitter:image:width': '600',
         'twitter:image:height': '600',
         'twitter:image:alt': imageAlt,
+        'twitter:card': 'summary_large_image',
       },
     };
   } catch (error) {
