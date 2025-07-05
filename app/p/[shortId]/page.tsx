@@ -256,57 +256,36 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       imageUrl = imageUrl.replace('http://', 'https://');
     }
     
-    // URL segura adicional para WhatsApp
+    // URL segura para WhatsApp
     const secureImageUrl = imageUrl.replace('http://', 'https://');
     
-    // URL otimizada especificamente para WhatsApp preview
-    const whatsappOptimizedImageUrl = `${baseUrl}/api/whatsapp-image/${shortId}`;
-    const secureWhatsappImageUrl = whatsappOptimizedImageUrl.replace('http://', 'https://');
-    
-    // SVG image for better WhatsApp compatibility
-    const whatsappSvgImageUrl = `${baseUrl}/api/whatsapp-png/${shortId}`;
-    const secureWhatsappSvgImageUrl = whatsappSvgImageUrl.replace('http://', 'https://');
+    // Alt text otimizado para a imagem
+    const imageAlt = `${promotion.title} - ${promotion.storeName} - ${promotion.price}`;
 
     return {
       title: title,
       description: description,
       keywords: `promoção, oferta, desconto, ${promotion.storeName}, ${promotion.title}, cupom, barato`,
       
-      // OPEN GRAPH OTIMIZADO PARA WHATSAPP
+      // OPEN GRAPH OTIMIZADO PARA WHATSAPP - SEGUINDO TODAS AS MELHORES PRÁTICAS
       openGraph: {
         title: title,
         description: description,
         url: pageUrl,
         siteName: 'Fareja - As Melhores Promoções',
         locale: 'pt_BR',
-        type: 'article',
+        type: 'product', // Mudança crítica: product ao invés de article
         publishedTime: promotion.createdAt.toISOString(),
         
-        // IMAGENS OTIMIZADAS PARA WHATSAPP - SEGUINDO MELHORES PRÁTICAS
+        // IMAGEM PRINCIPAL OTIMIZADA PARA WHATSAPP (600x600 WebP)
         images: [
           {
-            url: whatsappSvgImageUrl,
-            secureUrl: secureWhatsappSvgImageUrl,
-            width: 1200,
-            height: 630,
-            alt: promotion.title,
-            type: 'image/svg+xml',
-          },
-          {
-            url: whatsappOptimizedImageUrl,
-            secureUrl: secureWhatsappImageUrl,
-            width: 1200,
-            height: 630,
-            alt: promotion.title,
-            type: 'text/html',
-          },
-          {
-            url: imageUrl,
+            url: secureImageUrl,
             secureUrl: secureImageUrl,
-            width: 1200,
-            height: 630,
-            alt: promotion.title,
-            type: 'image/jpeg',
+            width: 600,
+            height: 600,
+            alt: imageAlt,
+            type: 'image/webp', // Formato otimizado
           }
         ],
         section: 'Promoções e Ofertas',
@@ -340,13 +319,26 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         canonical: pageUrl,
       },
       
-      // SCHEMA.ORG STRUCTURED DATA
+      // META TAGS ESPECÍFICAS PARA WHATSAPP E REDES SOCIAIS
       other: {
+        // Product meta tags para melhor SEO e redes sociais
         'product:price:amount': promotion.price.replace(/[^\d,]/g, '').replace(',', '.'),
         'product:price:currency': 'BRL',
         'product:availability': 'in stock',
         'product:condition': 'new',
         'product:brand': promotion.storeName,
+        
+        // Meta tags específicas do WhatsApp para garantir preview perfeito
+        'og:image:width': '600',
+        'og:image:height': '600',
+        'og:image:type': 'image/webp',
+        'og:image:alt': imageAlt,
+        'og:image:secure_url': secureImageUrl,
+        
+        // Meta tags adicionais para melhor compatibilidade
+        'twitter:image:width': '600',
+        'twitter:image:height': '600',
+        'twitter:image:alt': imageAlt,
       },
     };
   } catch (error) {
