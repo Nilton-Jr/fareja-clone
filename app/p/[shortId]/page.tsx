@@ -239,14 +239,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       : `${promotion.title} - ${promotion.price}`;
 
     // Descrição otimizada para WhatsApp (máximo 160 caracteres)
-    let description = `🔥 Oferta ${promotion.storeName}: ${promotion.price}`;
-    if (promotion.price_from && discount) {
-      description += ` (${discount}% OFF de ${promotion.price_from})`;
+    let description;
+    if (discount) {
+      description = `🔥${discount}% OFF! Corre que acaba rápido!`;
+    } else {
+      description = `🔥Corre que acaba rápido!`;
     }
-    if (promotion.coupon) {
-      description += ` | Cupom: ${promotion.coupon}`;
-    }
-    description += ` | Clique e aproveite!`;
 
     // Garantir que a imagem seja absoluta e HTTPS para WhatsApp
     let imageUrl = promotion.imageUrl;
