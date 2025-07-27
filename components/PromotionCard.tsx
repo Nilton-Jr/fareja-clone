@@ -1,6 +1,8 @@
+import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getStoreLogo } from '@/lib/storeLogo';
+import { trackPromotionClick, trackPromotionView } from '@/hooks/useAnalytics';
 
 interface Promotion {
   id: string;
@@ -20,6 +22,11 @@ interface PromotionCardProps {
 }
 
 export default function PromotionCard({ promotion }: PromotionCardProps) {
+  // Track promotion view when component mounts
+  React.useEffect(() => {
+    trackPromotionView(promotion.id, 'card');
+  }, [promotion.id]);
+
   const formatTimeAgo = (date: Date) => {
     const now = new Date();
     const diffInMs = now.getTime() - new Date(date).getTime();
@@ -124,6 +131,7 @@ export default function PromotionCard({ promotion }: PromotionCardProps) {
                     e.preventDefault();
                     e.stopPropagation();
                     navigator.clipboard.writeText(promotion.coupon || '');
+                    trackPromotionClick(promotion.id, 'copiar_cupom_card');
                     // Feedback visual temporário
                     const element = e.currentTarget;
                     const originalText = element.innerHTML;
@@ -153,7 +161,10 @@ export default function PromotionCard({ promotion }: PromotionCardProps) {
           target="_blank"
           rel="noopener noreferrer"
           className="block w-full bg-orange-500 hover:bg-orange-600 text-white text-center py-2 px-3 rounded-lg font-medium text-sm transition-colors duration-200"
-          onClick={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            trackPromotionClick(promotion.id, 'pegar_promocao_card');
+          }}
         >
           Pegar Promoção
         </a>

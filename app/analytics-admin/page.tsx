@@ -22,7 +22,7 @@ function LineChart({ data }: { data: any[] }) {
 
   // Create scaling functions
   const xScale = (index: number) => (index / (data.length - 1)) * chartWidth;
-  const yScale = (value: number) => chartHeight - (value / maxValue) * chartHeight;
+  const yScale = (value: number) => (value / maxValue) * chartHeight;
 
   // Generate path strings for each line
   const createPath = (values: number[]) => {
@@ -41,7 +41,7 @@ function LineChart({ data }: { data: any[] }) {
         <g transform={`translate(${padding.left}, ${padding.top})`}>
           {/* Grid lines */}
           {[0, 25, 50, 75, 100].map(percent => {
-            const y = (percent / 100) * chartHeight;
+            const y = chartHeight - (percent / 100) * chartHeight;
             return (
               <line
                 key={percent}
@@ -116,7 +116,7 @@ function LineChart({ data }: { data: any[] }) {
           {/* Y-axis labels */}
           {[0, 25, 50, 75, 100].map(percent => {
             const value = Math.round((percent / 100) * maxValue);
-            const y = (percent / 100) * chartHeight;
+            const y = chartHeight - (percent / 100) * chartHeight;
             return (
               <text
                 key={percent}
@@ -523,6 +523,18 @@ function AnalyticsContent() {
               title="Apagar dados de analytics por período"
             >
               🗑️ Apagar Dados
+            </button>
+            <button
+              onClick={() => fetchAnalyticsData()}
+              disabled={loading}
+              className={`px-4 py-2 rounded transition-colors ${
+                loading 
+                  ? 'bg-gray-400 text-white cursor-not-allowed' 
+                  : 'bg-green-600 text-white hover:bg-green-700'
+              }`}
+              title="Atualizar dados do dashboard"
+            >
+              {loading ? '⏳ Carregando...' : '🔄 Atualizar Dados'}
             </button>
             <a 
               href="/admin" 

@@ -1,15 +1,23 @@
 'use client';
 
+import { trackPromotionClick } from '@/hooks/useAnalytics';
+
 interface CopyableCouponProps {
   coupon: string;
+  promotionId?: string;
   className?: string;
 }
 
-export default function CopyableCoupon({ coupon, className = "" }: CopyableCouponProps) {
+export default function CopyableCoupon({ coupon, promotionId, className = "" }: CopyableCouponProps) {
   const handleCopy = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     navigator.clipboard.writeText(coupon);
+    
+    // Track the coupon copy if promotionId is provided
+    if (promotionId) {
+      trackPromotionClick(promotionId, 'copiar_cupom_produto');
+    }
     
     // Feedback visual temporário
     const element = e.currentTarget as HTMLElement;
