@@ -192,18 +192,18 @@ export default async function AnalyticsAdmin({ searchParams }: AnalyticsPageProp
                       Data
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Eventos
+                      Tipo
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {(dailyStats as any[]).slice(0, 10).map((day: any, index: number) => (
+                  {(dailyStats as any[]).slice(0, 10).map((event: any, index: number) => (
                     <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(day.timestamp).toLocaleDateString('pt-BR')}
+                        {new Date(event.timestamp).toLocaleDateString('pt-BR')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {day._count?.id || 0}
+                        {event.sessionId ? 'Visita' : 'Evento'}
                       </td>
                     </tr>
                   ))}

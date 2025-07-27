@@ -160,15 +160,15 @@ export async function getAnalyticsData(days: number = 30) {
         _count: { device: true }
       }),
       
-      // Daily statistics for the last 30 days (using safer aggregation)
-      prisma.analytics.groupBy({
-        by: ['timestamp'],
+      // Daily statistics for the last 30 days (using simpler findMany)
+      prisma.analytics.findMany({
         where: { timestamp: { gte: startDate } },
-        _count: { 
-          id: true,
-          sessionId: true 
+        select: {
+          timestamp: true,
+          sessionId: true
         },
-        take: 30
+        orderBy: { timestamp: 'desc' },
+        take: 100
       })
     ]);
 
