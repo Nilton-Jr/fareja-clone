@@ -291,7 +291,8 @@ export async function getAnalyticsDataByDateRange(
         },
         select: {
           timestamp: true,
-          sessionId: true
+          sessionId: true,
+          page: true
         },
         orderBy: { timestamp: 'desc' }
       }),
@@ -539,7 +540,6 @@ export async function getAnalyticsDataByDateRange(
     if (filters?.storeName || filters?.hasCoupon !== undefined) {
       // Get shortIds of promotions that match the filters
       const filteredPromotionShortIds = new Set();
-      let matchedCount = 0;
       promotionsData.forEach((promo: any) => {
         let matches = true;
         
@@ -556,21 +556,11 @@ export async function getAnalyticsDataByDateRange(
         
         if (matches) {
           filteredPromotionShortIds.add(promo.shortId);
-          matchedCount++;
-          if (matchedCount <= 3) {
-            console.log('FILTER DEBUG - Matched promotion:', { shortId: promo.shortId, storeName: promo.storeName, hasCoupon: !!promo.coupon });
-          }
         }
       });
       
       if (filteredPromotionShortIds.size > 0) {
         // Filter daily analytics to only include pages from filtered promotions  
-        console.log('FILTER DEBUG - Filter criteria:', { storeName: filters.storeName, hasCoupon: filters.hasCoupon });
-        console.log('FILTER DEBUG - Total promotions found:', promotionsData.length);
-        console.log('FILTER DEBUG - Filtered promotion shortIds count:', filteredPromotionShortIds.size);
-        console.log('FILTER DEBUG - Sample promotion shortIds:', Array.from(filteredPromotionShortIds).slice(0, 5));
-        console.log('FILTER DEBUG - Total daily records:', daily.length);
-        console.log('FILTER DEBUG - Sample daily pages:', daily.slice(0, 10).map((d: any) => d.page));
         
         const filteredDaily = daily.filter((view: any) => {
           if (!view.page || !view.page.startsWith('/p/')) return false;
@@ -586,8 +576,6 @@ export async function getAnalyticsDataByDateRange(
           }
           return hasMatch;
         });
-        
-        console.log('FILTER DEBUG - Filtered daily count:', filteredDaily.length);
         
         finalPageViews = filteredDaily.length;
         
@@ -736,7 +724,8 @@ export async function getAnalyticsData(
         where: { timestamp: { gte: startDate } },
         select: {
           timestamp: true,
-          sessionId: true
+          sessionId: true,
+          page: true
         },
         orderBy: { timestamp: 'desc' },
         take: 100
@@ -974,7 +963,6 @@ export async function getAnalyticsData(
     if (filters?.storeName || filters?.hasCoupon !== undefined) {
       // Get shortIds of promotions that match the filters
       const filteredPromotionShortIds = new Set();
-      let matchedCount = 0;
       promotionsData.forEach((promo: any) => {
         let matches = true;
         
@@ -991,21 +979,11 @@ export async function getAnalyticsData(
         
         if (matches) {
           filteredPromotionShortIds.add(promo.shortId);
-          matchedCount++;
-          if (matchedCount <= 3) {
-            console.log('FILTER DEBUG - Matched promotion:', { shortId: promo.shortId, storeName: promo.storeName, hasCoupon: !!promo.coupon });
-          }
         }
       });
       
       if (filteredPromotionShortIds.size > 0) {
         // Filter daily analytics to only include pages from filtered promotions  
-        console.log('FILTER DEBUG - Filter criteria:', { storeName: filters.storeName, hasCoupon: filters.hasCoupon });
-        console.log('FILTER DEBUG - Total promotions found:', promotionsData.length);
-        console.log('FILTER DEBUG - Filtered promotion shortIds count:', filteredPromotionShortIds.size);
-        console.log('FILTER DEBUG - Sample promotion shortIds:', Array.from(filteredPromotionShortIds).slice(0, 5));
-        console.log('FILTER DEBUG - Total daily records:', daily.length);
-        console.log('FILTER DEBUG - Sample daily pages:', daily.slice(0, 10).map((d: any) => d.page));
         
         const filteredDaily = daily.filter((view: any) => {
           if (!view.page || !view.page.startsWith('/p/')) return false;
@@ -1021,8 +999,6 @@ export async function getAnalyticsData(
           }
           return hasMatch;
         });
-        
-        console.log('FILTER DEBUG - Filtered daily count:', filteredDaily.length);
         
         finalPageViews = filteredDaily.length;
         
