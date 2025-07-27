@@ -13,6 +13,13 @@ function AnalyticsContent() {
   const [apiKey, setApiKey] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authError, setAuthError] = useState('');
+  const [showDateFilter, setShowDateFilter] = useState(false);
+  const [dateFilter, setDateFilter] = useState({
+    startDay: '',
+    endDay: '',
+    month: '',
+    year: new Date().getFullYear().toString()
+  });
 
   useEffect(() => {
     const daysParam = searchParams.get('days');
@@ -25,11 +32,12 @@ function AnalyticsContent() {
     }
   }, [days, isAuthenticated]);
 
-  const fetchAnalyticsData = async () => {
+  const fetchAnalyticsData = async (customParams?: string) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/analytics/data?days=${days}`, {
+      const params = customParams || `days=${days}`;
+      const response = await fetch(`/api/analytics/data?${params}`, {
         headers: {
           'Authorization': `Bearer ${apiKey}`
         }
@@ -81,6 +89,57 @@ function AnalyticsContent() {
     const url = new URL(window.location.href);
     url.searchParams.set('days', newDays.toString());
     window.history.replaceState({}, '', url.toString());
+  };
+
+  const handleDateFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setDateFilter({
+      ...dateFilter,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const applyDateFilter = () => {
+    const { startDay, endDay, month, year } = dateFilter;
+    
+    if (!startDay || !endDay || !month) {
+      setError('❌ Por favor, preencha todos os campos de data.');
+      return;
+    }
+
+    const startDayNum = parseInt(startDay);
+    const endDayNum = parseInt(endDay);
+    const monthNum = parseInt(month);
+
+    if (startDayNum < 1 || startDayNum > 31 || endDayNum < 1 || endDayNum > 31) {
+      setError('❌ Dias devem estar entre 1 e 31.');
+      return;
+    }
+
+    if (monthNum < 1 || monthNum > 12) {
+      setError('❌ Mês deve estar entre 1 e 12.');
+      return;
+    }
+
+    if (startDayNum > endDayNum) {
+      setError('❌ O dia inicial não pode ser maior que o dia final.');
+      return;
+    }
+
+    // Build custom params for date range
+    const params = `startDay=${startDay}&endDay=${endDay}&month=${month}&year=${year}`;
+    fetchAnalyticsData(params);
+    setShowDateFilter(false);
+  };
+
+  const clearDateFilter = () => {
+    setDateFilter({
+      startDay: '',
+      endDay: '',
+      month: '',
+      year: new Date().getFullYear().toString()
+    });
+    fetchAnalyticsData();
+    setShowDateFilter(false);
   };
 
   // Show authentication form if not authenticated
@@ -201,6 +260,12 @@ function AnalyticsContent() {
               <option value="30">Últimos 30 dias</option>
               <option value="90">Últimos 90 dias</option>
             </select>
+            <button
+              onClick={() => setShowDateFilter(!showDateFilter)}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+            >
+              📅 Filtro Personalizado
+            </button>
             <a 
               href="/admin" 
               className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
@@ -209,6 +274,105 @@ function AnalyticsContent() {
             </a>
           </div>
         </div>
+
+        {/* Custom Date Filter */}
+        {showDateFilter && (
+          <div className="bg-white rounded-lg shadow p-6 mb-8 border-l-4 border-blue-500">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">📅 Filtro por Período Específico</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Dia Inicial
+                </label>
+                <input
+                  type="number"
+                  name="startDay"
+                  min="1"
+                  max="31"
+                  value={dateFilter.startDay}
+                  onChange={handleDateFilterChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Ex: 1"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Dia Final
+                </label>
+                <input
+                  type="number"
+                  name="endDay"
+                  min="1"
+                  max="31"
+                  value={dateFilter.endDay}
+                  onChange={handleDateFilterChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Ex: 31"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Mês
+                </label>
+                <select
+                  name="month"
+                  value={dateFilter.month}
+                  onChange={handleDateFilterChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Selecione</option>
+                  <option value="1">Janeiro</option>
+                  <option value="2">Fevereiro</option>
+                  <option value="3">Março</option>
+                  <option value="4">Abril</option>
+                  <option value="5">Maio</option>
+                  <option value="6">Junho</option>
+                  <option value="7">Julho</option>
+                  <option value="8">Agosto</option>
+                  <option value="9">Setembro</option>
+                  <option value="10">Outubro</option>
+                  <option value="11">Novembro</option>
+                  <option value="12">Dezembro</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Ano
+                </label>
+                <input
+                  type="number"
+                  name="year"
+                  min="2024"
+                  max="2030"
+                  value={dateFilter.year}
+                  onChange={handleDateFilterChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Ex: 2025"
+                />
+              </div>
+            </div>
+            <div className="flex space-x-3">
+              <button
+                onClick={applyDateFilter}
+                className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
+              >
+                ✅ Aplicar Filtro
+              </button>
+              <button
+                onClick={clearDateFilter}
+                className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                🔄 Limpar Filtro
+              </button>
+              <button
+                onClick={() => setShowDateFilter(false)}
+                className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors"
+              >
+                ❌ Cancelar
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Overview Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">

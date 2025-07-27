@@ -102,6 +102,136 @@ export async function trackPromotionView(data: {
   }
 }
 
+// Analytics data aggregation by custom date range
+export async function getAnalyticsDataByDateRange(startDate: Date, endDate: Date) {
+  try {
+    // Safer parallel queries with individual error handling
+    const [
+      totalPageViews,
+      uniqueVisitors,
+      totalClicks,
+      topPages,
+      topPromotions,
+      deviceStats,
+      dailyStats
+    ] = await Promise.allSettled([
+      // Total page views
+      prisma.analytics.count({
+        where: { 
+          timestamp: { 
+            gte: startDate,
+            lte: endDate 
+          } 
+        }
+      }),
+      
+      // Unique visitors (by session)
+      prisma.analytics.findMany({
+        where: { 
+          timestamp: { 
+            gte: startDate,
+            lte: endDate 
+          } 
+        },
+        select: { sessionId: true },
+        distinct: ['sessionId']
+      }),
+      
+      // Total clicks
+      prisma.promotionClick.count({
+        where: { 
+          timestamp: { 
+            gte: startDate,
+            lte: endDate 
+          } 
+        }
+      }),
+      
+      // Top pages
+      prisma.analytics.groupBy({
+        by: ['page'],
+        where: { 
+          timestamp: { 
+            gte: startDate,
+            lte: endDate 
+          } 
+        },
+        _count: { page: true },
+        orderBy: { _count: { page: 'desc' } },
+        take: 10
+      }),
+      
+      // Top clicked promotions
+      prisma.promotionClick.groupBy({
+        by: ['promotionId'],
+        where: { 
+          timestamp: { 
+            gte: startDate,
+            lte: endDate 
+          } 
+        },
+        _count: { promotionId: true },
+        orderBy: { _count: { promotionId: 'desc' } },
+        take: 10
+      }),
+      
+      // Device statistics
+      prisma.analytics.groupBy({
+        by: ['device'],
+        where: { 
+          timestamp: { 
+            gte: startDate,
+            lte: endDate 
+          } 
+        },
+        _count: { device: true }
+      }),
+      
+      // Daily statistics for the date range
+      prisma.analytics.findMany({
+        where: { 
+          timestamp: { 
+            gte: startDate,
+            lte: endDate 
+          } 
+        },
+        select: {
+          timestamp: true,
+          sessionId: true
+        },
+        orderBy: { timestamp: 'desc' },
+        take: 100
+      })
+    ]);
+
+    // Extract values from settled promises with fallbacks
+    const getSettledValue = (result: any, fallback: any) => 
+      result.status === 'fulfilled' ? result.value : fallback;
+
+    const pageViews = getSettledValue(totalPageViews, 0);
+    const visitors = getSettledValue(uniqueVisitors, []);
+    const clicks = getSettledValue(totalClicks, 0);
+    const pages = getSettledValue(topPages, []);
+    const promotions = getSettledValue(topPromotions, []);
+    const devices = getSettledValue(deviceStats, []);
+    const daily = getSettledValue(dailyStats, []);
+
+    return {
+      totalPageViews: pageViews,
+      uniqueVisitors: visitors.length,
+      totalClicks: clicks,
+      topPages: pages,
+      topPromotions: promotions,
+      deviceStats: devices,
+      dailyStats: daily,
+      conversionRate: pageViews > 0 ? ((clicks / pageViews) * 100).toFixed(2) : '0'
+    };
+  } catch (error) {
+    console.error('Error fetching analytics data by date range:', error);
+    return null;
+  }
+}
+
 // Analytics data aggregation functions
 export async function getAnalyticsData(days: number = 30) {
   const startDate = new Date();
