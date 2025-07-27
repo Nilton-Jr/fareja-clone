@@ -559,12 +559,21 @@ export async function getAnalyticsDataByDateRange(
       });
       
       if (filteredPromotionShortIds.size > 0) {
-        // Filter daily analytics to only include pages from filtered promotions
+        // Filter daily analytics to only include pages from filtered promotions  
+        console.log('FILTER DEBUG - Sample promotion shortIds:', Array.from(filteredPromotionShortIds).slice(0, 5));
+        console.log('FILTER DEBUG - Sample daily pages:', daily.slice(0, 10).map(d => d.page));
+        
         const filteredDaily = daily.filter((view: any) => {
           if (!view.page || !view.page.startsWith('/p/')) return false;
           const shortId = view.page.replace('/p/', '');
-          return filteredPromotionShortIds.has(shortId);
+          const hasMatch = filteredPromotionShortIds.has(shortId);
+          if (hasMatch) {
+            console.log('FILTER DEBUG - Found matching page:', view.page, 'shortId:', shortId);
+          }
+          return hasMatch;
         });
+        
+        console.log('FILTER DEBUG - Filtered daily count:', filteredDaily.length);
         
         finalPageViews = filteredDaily.length;
         
@@ -971,12 +980,21 @@ export async function getAnalyticsData(
       });
       
       if (filteredPromotionShortIds.size > 0) {
-        // Filter daily analytics to only include pages from filtered promotions
+        // Filter daily analytics to only include pages from filtered promotions  
+        console.log('FILTER DEBUG - Sample promotion shortIds:', Array.from(filteredPromotionShortIds).slice(0, 5));
+        console.log('FILTER DEBUG - Sample daily pages:', daily.slice(0, 10).map(d => d.page));
+        
         const filteredDaily = daily.filter((view: any) => {
           if (!view.page || !view.page.startsWith('/p/')) return false;
           const shortId = view.page.replace('/p/', '');
-          return filteredPromotionShortIds.has(shortId);
+          const hasMatch = filteredPromotionShortIds.has(shortId);
+          if (hasMatch) {
+            console.log('FILTER DEBUG - Found matching page:', view.page, 'shortId:', shortId);
+          }
+          return hasMatch;
         });
+        
+        console.log('FILTER DEBUG - Filtered daily count:', filteredDaily.length);
         
         finalPageViews = filteredDaily.length;
         
