@@ -57,6 +57,18 @@ export default async function ProductPage({ params }: PageProps) {
 
     const discount = calculateDiscount();
 
+    const getStoreSlogan = (storeName: string) => {
+      const slogans: Record<string, string> = {
+        'Amazon': '🚀 Entrega rápida Amazon',
+        'Mercado Livre': '💰 Melhor preço garantido',
+        'Magalu': '⚡ Magazine Luiza',
+        'AliExpress': '🌍 Direto da China',
+        'Americanas': '🛒 Americanas.com',
+        'Shopee': '🎁 Frete grátis Shopee'
+      };
+      return slogans[storeName] || `📦 ${storeName}`;
+    };
+
     return (
       <div className="min-h-screen bg-gray-100">
         {/* Header Stripe - Sticky */}
@@ -102,7 +114,7 @@ export default async function ProductPage({ params }: PageProps) {
                 {/* Store and Time */}
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
-                    {promotion.storeName}
+                    {getStoreSlogan(promotion.storeName)}
                   </span>
                   <span className="text-xs text-gray-500">
                     {formatTimeAgo(promotion.createdAt)}
@@ -147,7 +159,7 @@ export default async function ProductPage({ params }: PageProps) {
                     rel="noopener noreferrer"
                     className="block w-full bg-orange-500 hover:bg-orange-600 text-white text-center py-4 px-6 rounded-lg font-bold text-lg transition-colors duration-200"
                   >
-                    Ver Oferta na {promotion.storeName}
+                    Pegar Promoção
                   </Link>
                   
                   <div className="text-center text-sm text-gray-500">
