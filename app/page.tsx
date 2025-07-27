@@ -140,16 +140,6 @@ export default function Home() {
             </div>
             
             <div className="flex items-center space-x-2">
-              {/* WhatsApp call - visible on mobile */}
-              <a
-                href="https://chat.whatsapp.com/EIrN3j3ndMH6SV3pCWDfJz"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="md:hidden flex items-center bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors"
-              >
-                📱 VIP
-              </a>
-              
               <button 
                 onClick={() => setShowSearch(!showSearch)}
                 className="flex items-center justify-center w-10 h-10 bg-gray-600 hover:bg-gray-700 rounded"

@@ -65,7 +65,7 @@ export default async function ProductPage({ params }: PageProps) {
         <ProductHeader />
         
         {/* Mobile WhatsApp Header Call */}
-        <div className="md:hidden bg-[#151E3E] text-white sticky top-16 z-40 border-t border-gray-600">
+        <div className="md:hidden bg-[#151E3E] text-white sticky top-[72px] z-30 border-t border-gray-600">
           <div className="container mx-auto px-4 py-2">
             <div className="flex items-center justify-center">
               <a
