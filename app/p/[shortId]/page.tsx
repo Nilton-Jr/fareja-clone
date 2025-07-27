@@ -298,14 +298,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         locale: 'pt_BR',
         type: 'website', // Tipo compatível com Next.js TypeScript
         
-        // IMAGEM PRINCIPAL OTIMIZADA PARA WHATSAPP (600x600 WebP)
+        // IMAGEM PRINCIPAL OTIMIZADA PARA WHATSAPP (1200x630 para máxima compatibilidade)
         images: [
           {
             url: secureImageUrl,
             secureUrl: secureImageUrl,
-            width: 600,
-            height: 600,
+            width: 1200,
+            height: 630,
             alt: imageAlt,
+            type: 'image/webp',
           }
         ],
       },
@@ -349,17 +350,21 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         'og:product:brand': promotion.storeName,
         
         // Meta tags específicas do WhatsApp para garantir preview perfeito
-        'og:image:width': '600',
-        'og:image:height': '600',
+        'og:image:width': '1200',
+        'og:image:height': '630',
         'og:image:type': 'image/webp',
         'og:image:alt': imageAlt,
         'og:image:secure_url': secureImageUrl,
         
         // Meta tags adicionais para melhor compatibilidade
-        'twitter:image:width': '600',
-        'twitter:image:height': '600',
+        'twitter:image:width': '1200',
+        'twitter:image:height': '630',
         'twitter:image:alt': imageAlt,
         'twitter:card': 'summary_large_image',
+        
+        // Tags extras para máxima compatibilidade WhatsApp
+        'og:site_name': 'Fareja.ai - As Melhores Promoções',
+        'og:locale': 'pt_BR',
       },
     };
   } catch (error) {
