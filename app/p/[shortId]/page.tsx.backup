@@ -9,7 +9,6 @@ import MorePromotions from '@/components/MorePromotions';
 import CopyableCoupon from '@/components/CopyableCoupon';
 import ProductPageClient from '@/components/ProductPageClient';
 import { getStoreLogo } from '@/lib/storeLogo';
-import { optimizeImageUrlForWhatsApp } from '@/lib/imageOptimizer';
 
 interface PageProps {
   params: Promise<{
@@ -256,8 +255,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       imageUrl = imageUrl.replace('http://', 'https://');
     }
     
-    // Usar proxy de imagem para garantir compatibilidade com WhatsApp
-    const secureImageUrl = await optimizeImageUrlForWhatsApp(imageUrl);
+    // URL segura para WhatsApp
+    const secureImageUrl = imageUrl.replace('http://', 'https://');
     
     // Alt text otimizado para a imagem
     const imageAlt = `${promotion.title} - ${promotion.storeName} - ${promotion.price}`;

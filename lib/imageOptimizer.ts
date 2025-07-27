@@ -183,3 +183,40 @@ export function validateImageForWhatsApp(image: OptimizedImage): boolean {
     aspectRatio <= 4 // WhatsApp recomenda proporção máxima de 4:1
   );
 }
+
+/**
+ * Otimiza URL de imagem para WhatsApp usando proxy interno
+ */
+export async function optimizeImageUrlForWhatsApp(imageUrl: string): Promise<string> {
+  // Se já é do nosso domínio, retorna como está
+  if (imageUrl.includes('fareja.ai') || imageUrl.includes('localhost')) {
+    return imageUrl;
+  }
+
+  // Usa nosso proxy de imagem para imagens externas
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://fareja.ai';
+  const encodedUrl = encodeURIComponent(imageUrl);
+  return `${baseUrl}/api/image-proxy?url=${encodedUrl}`;
+}
+
+/**
+ * Pré-aquece cache de imagem para WhatsApp
+ */
+export async function prewarmImageCache(imageUrl: string): Promise<boolean> {
+  try {
+    const optimizedUrl = await optimizeImageUrlForWhatsApp(imageUrl);
+    
+    // Pré-busca a imagem para garantir que está em cache
+    const response = await fetch(optimizedUrl, {
+      method: 'HEAD',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; WhatsApp)',
+      },
+    });
+    
+    return response.ok;
+  } catch (error) {
+    console.error('Falha ao pré-aquecer cache de imagem:', error);
+    return false;
+  }
+}
