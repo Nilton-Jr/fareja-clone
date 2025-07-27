@@ -2,7 +2,7 @@
 import { prisma } from './prisma';
 
 // Utility to detect device type from user agent
-export function getDeviceType(userAgent: string | null): string {
+export function getDeviceType(userAgent: string | null | undefined): string {
   if (!userAgent) return 'unknown';
   
   const ua = userAgent.toLowerCase();
@@ -30,9 +30,9 @@ export async function getCountryFromIP(ip: string): Promise<string | null> {
 // Non-blocking page view tracking
 export async function trackPageView(data: {
   page: string;
-  userAgent?: string | null;
-  referrer?: string | null;
-  sessionId?: string | null;
+  userAgent?: string | null | undefined;
+  referrer?: string | null | undefined;
+  sessionId?: string | null | undefined;
 }): Promise<void> {
   try {
     // Run async without blocking the main thread
@@ -58,8 +58,8 @@ export async function trackPageView(data: {
 export async function trackPromotionClick(data: {
   promotionId: string;
   buttonType: string;
-  userAgent?: string | null;
-  referrer?: string | null;
+  userAgent?: string | null | undefined;
+  referrer?: string | null | undefined;
 }): Promise<void> {
   try {
     setImmediate(async () => {
@@ -82,8 +82,8 @@ export async function trackPromotionClick(data: {
 export async function trackPromotionView(data: {
   promotionId: string;
   viewType: string;
-  userAgent?: string | null;
-  referrer?: string | null;
+  userAgent?: string | null | undefined;
+  referrer?: string | null | undefined;
 }): Promise<void> {
   try {
     setImmediate(async () => {
