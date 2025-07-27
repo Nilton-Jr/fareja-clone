@@ -268,6 +268,10 @@ function AnalyticsContent() {
     couponStats,
     deviceStats,
     dailyStats,
+    trafficSources,
+    chartData,
+    totalViewsValue,
+    totalClicksValue,
     conversionRate
   } = analyticsData;
 
@@ -310,13 +314,15 @@ function AnalyticsContent() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 🏪 Filtro por Loja
               </label>
-              <input
-                type="text"
+              <select
                 value={storeFilter}
                 onChange={(e) => setStoreFilter(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                placeholder="Digite o nome da loja (ex: Amazon, Americanas...)"
-              />
+              >
+                <option value="">Todas as lojas</option>
+                <option value="Amazon">Amazon</option>
+                <option value="Mercado Livre">Mercado Livre</option>
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -466,6 +472,7 @@ function AnalyticsContent() {
             value={totalPageViews.toLocaleString()}
             icon="👁️"
             color="blue"
+            totalValue={totalViewsValue}
           />
           <MetricCard
             title="Visitantes Únicos"
@@ -478,6 +485,7 @@ function AnalyticsContent() {
             value={totalClicks.toLocaleString()}
             icon="🔗"
             color="purple"
+            totalValue={totalClicksValue}
           />
           <MetricCard
             title="Taxa de Conversão"
@@ -540,8 +548,8 @@ function AnalyticsContent() {
           </div>
         </div>
 
-        {/* Charts Row 2 - Store and Coupon Stats */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Charts Row 2 - Store, Coupon and Traffic Sources */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Top Stores */}
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">🏪 Lojas Mais Clicadas</h3>
@@ -619,6 +627,49 @@ function AnalyticsContent() {
               ) : (
                 <div className="text-center py-4 text-gray-500">
                   <p>📊 Nenhum dado de cupom disponível ainda.</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Traffic Sources */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">📍 Fontes de Tráfego</h3>
+            <div className="space-y-3">
+              {trafficSources && trafficSources.length > 0 ? (
+                trafficSources.slice(0, 8).map((source: any, index: number) => {
+                  const getSourceIcon = (sourceName: string) => {
+                    switch (sourceName.toLowerCase()) {
+                      case 'whatsapp': return '💬';
+                      case 'instagram': return '📸';
+                      case 'facebook': return '📘';
+                      case 'google': return '🔍';
+                      case 'twitter': return '🐦';
+                      case 'youtube': return '📹';
+                      case 'linkedin': return '💼';
+                      case 'direto': return '🔗';
+                      default: return '🌐';
+                    }
+                  };
+
+                  return (
+                    <div key={source.source} className="flex justify-between items-center">
+                      <div className="flex items-center">
+                        <span className="text-sm text-gray-500 w-6">{index + 1}.</span>
+                        <span className="text-lg mr-2">{getSourceIcon(source.source)}</span>
+                        <span className="text-sm text-gray-900 truncate">
+                          {source.source}
+                        </span>
+                      </div>
+                      <span className="text-sm font-medium text-purple-600">
+                        {source.visits} visitas
+                      </span>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="text-center py-4 text-gray-500">
+                  <p>📊 Nenhum dado de fonte disponível ainda.</p>
                 </div>
               )}
             </div>
@@ -769,12 +820,14 @@ function MetricCard({
   title, 
   value, 
   icon, 
-  color 
+  color,
+  totalValue 
 }: { 
   title: string; 
   value: string; 
   icon: string; 
-  color: 'blue' | 'green' | 'purple' | 'orange'; 
+  color: 'blue' | 'green' | 'purple' | 'orange';
+  totalValue?: number;
 }) {
   const colorClasses = {
     blue: 'border-blue-200 bg-blue-50',
@@ -783,13 +836,25 @@ function MetricCard({
     orange: 'border-orange-200 bg-orange-50'
   };
 
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
   return (
     <div className={`bg-white rounded-lg shadow border-l-4 ${colorClasses[color]} p-6`}>
       <div className="flex items-center">
         <div className="text-2xl mr-3">{icon}</div>
-        <div>
+        <div className="flex-1">
           <div className="text-2xl font-bold text-gray-900">{value}</div>
           <div className="text-sm text-gray-600">{title}</div>
+          {totalValue !== undefined && totalValue > 0 && (
+            <div className="text-xs text-gray-500 mt-1">
+              Valor total: {formatCurrency(totalValue)}
+            </div>
+          )}
         </div>
       </div>
     </div>
