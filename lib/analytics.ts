@@ -108,6 +108,7 @@ export async function getAnalyticsData(days: number = 30) {
   startDate.setDate(startDate.getDate() - days);
 
   try {
+    // Safer parallel queries with individual error handling
     const [
       totalPageViews,
       uniqueVisitors,
@@ -116,7 +117,7 @@ export async function getAnalyticsData(days: number = 30) {
       topPromotions,
       deviceStats,
       dailyStats
-    ] = await Promise.all([
+    ] = await Promise.allSettled([
       // Total page views
       prisma.analytics.count({
         where: { timestamp: { gte: startDate } }
@@ -159,29 +160,39 @@ export async function getAnalyticsData(days: number = 30) {
         _count: { device: true }
       }),
       
-      // Daily statistics for the last 30 days
-      prisma.$queryRaw`
-        SELECT 
-          DATE(timestamp) as date,
-          COUNT(*) as views,
-          COUNT(DISTINCT "sessionId") as unique_visitors
-        FROM "Analytics"
-        WHERE timestamp >= ${startDate}
-        GROUP BY DATE(timestamp)
-        ORDER BY date DESC
-        LIMIT 30
-      `
+      // Daily statistics for the last 30 days (using safer aggregation)
+      prisma.analytics.groupBy({
+        by: ['timestamp'],
+        where: { timestamp: { gte: startDate } },
+        _count: { 
+          id: true,
+          sessionId: true 
+        },
+        take: 30
+      })
     ]);
 
+    // Extract values from settled promises with fallbacks
+    const getSettledValue = (result: any, fallback: any) => 
+      result.status === 'fulfilled' ? result.value : fallback;
+
+    const pageViews = getSettledValue(totalPageViews, 0);
+    const visitors = getSettledValue(uniqueVisitors, []);
+    const clicks = getSettledValue(totalClicks, 0);
+    const pages = getSettledValue(topPages, []);
+    const promotions = getSettledValue(topPromotions, []);
+    const devices = getSettledValue(deviceStats, []);
+    const daily = getSettledValue(dailyStats, []);
+
     return {
-      totalPageViews,
-      uniqueVisitors: uniqueVisitors.length,
-      totalClicks,
-      topPages,
-      topPromotions,
-      deviceStats,
-      dailyStats,
-      conversionRate: totalPageViews > 0 ? ((totalClicks / totalPageViews) * 100).toFixed(2) : '0'
+      totalPageViews: pageViews,
+      uniqueVisitors: visitors.length,
+      totalClicks: clicks,
+      topPages: pages,
+      topPromotions: promotions,
+      deviceStats: devices,
+      dailyStats: daily,
+      conversionRate: pageViews > 0 ? ((clicks / pageViews) * 100).toFixed(2) : '0'
     };
   } catch (error) {
     console.error('Error fetching analytics data:', error);

@@ -7,19 +7,37 @@ interface AnalyticsPageProps {
 }
 
 export default async function AnalyticsAdmin({ searchParams }: AnalyticsPageProps) {
-  const params = await searchParams;
-  const days = Number(params.days) || 30;
-  
-  // Get analytics data
-  const analyticsData = await getAnalyticsData(days);
+  let params: any = {};
+  let days = 30;
+  let analyticsData = null;
+
+  try {
+    params = await searchParams;
+    days = Number(params.days) || 30;
+    
+    // Get analytics data with error handling
+    analyticsData = await getAnalyticsData(days);
+  } catch (error) {
+    console.error('Analytics page error:', error);
+    analyticsData = null;
+  }
   
   if (!analyticsData) {
     return (
       <div className="min-h-screen bg-gray-100 p-8">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold text-gray-900 mb-8">📊 Analytics Dashboard</h1>
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-            Erro ao carregar dados de analytics.
+          <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
+            <h3 className="font-bold">⚠️ Analytics Indisponível</h3>
+            <p className="mt-2">Os analytics estão sendo configurados. Possíveis causas:</p>
+            <ul className="list-disc list-inside mt-2 text-sm">
+              <li>Tabelas do banco ainda não foram criadas</li>
+              <li>Ainda não há dados coletados</li>
+              <li>Conexão temporária com o banco</li>
+            </ul>
+            <p className="mt-2 text-sm">
+              📈 Os dados aparecerão automaticamente após algumas visitas ao site.
+            </p>
           </div>
         </div>
       </div>
@@ -164,39 +182,40 @@ export default async function AnalyticsAdmin({ searchParams }: AnalyticsPageProp
 
         {/* Recent Activity */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">📅 Atividade Diária</h3>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Data
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Visualizações
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Visitantes Únicos
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {(dailyStats as any[]).slice(0, 14).map((day: any, index: number) => (
-                  <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {new Date(day.date).toLocaleDateString('pt-BR')}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {Number(day.views).toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {Number(day.unique_visitors).toLocaleString()}
-                    </td>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">📅 Atividade Recente</h3>
+          {dailyStats && dailyStats.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Data
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Eventos
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {(dailyStats as any[]).slice(0, 10).map((day: any, index: number) => (
+                    <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {new Date(day.timestamp).toLocaleDateString('pt-BR')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {day._count?.id || 0}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <p>📊 Nenhum dado disponível ainda.</p>
+              <p className="text-sm mt-2">Os dados começarão a aparecer após algumas visitas ao site.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
