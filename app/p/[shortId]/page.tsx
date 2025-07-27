@@ -63,6 +63,22 @@ export default async function ProductPage({ params }: PageProps) {
       <div className="min-h-screen bg-gray-100">
         {/* Header Stripe - Sticky */}
         <ProductHeader />
+        
+        {/* Mobile WhatsApp Header Call */}
+        <div className="md:hidden bg-[#151E3E] text-white sticky top-16 z-40 border-t border-gray-600">
+          <div className="container mx-auto px-4 py-2">
+            <div className="flex items-center justify-center">
+              <a
+                href="https://chat.whatsapp.com/EIrN3j3ndMH6SV3pCWDfJz"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+              >
+                📱 Grupo VIP WhatsApp
+              </a>
+            </div>
+          </div>
+        </div>
 
         {/* WhatsApp Sidebar */}
         <div className="fixed right-4 top-24 z-40 hidden lg:block">
