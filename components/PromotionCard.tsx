@@ -61,17 +61,18 @@ export default function PromotionCard({ promotion }: PromotionCardProps) {
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 relative">
+      {/* Discount Badge */}
+      {discount && (
+        <div className="absolute top-2 right-2 z-10">
+          <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+            -{discount}%
+          </span>
+        </div>
+      )}
+      
+      {/* Clickable area for product page */}
       <Link href={`/p/${promotion.shortId}`} target="_blank" rel="noopener noreferrer">
         <div className="cursor-pointer">
-          {/* Discount Badge */}
-          {discount && (
-            <div className="absolute top-2 right-2 z-10">
-              <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full font-bold">
-                -{discount}%
-              </span>
-            </div>
-          )}
-          
           <div className="relative h-48 w-full bg-white flex items-center justify-center">
             <Image
               src={promotion.imageUrl}
@@ -92,7 +93,7 @@ export default function PromotionCard({ promotion }: PromotionCardProps) {
             </div>
           </div>
           
-          <div className="p-4">
+          <div className="p-4 pb-2">
             <div className="flex items-center justify-end mb-2">
               <span className="text-xs text-gray-500">
                 {formatTimeAgo(promotion.createdAt)}
@@ -115,13 +116,26 @@ export default function PromotionCard({ promotion }: PromotionCardProps) {
             </div>
             
             {promotion.coupon && promotion.coupon.trim() !== '' && promotion.coupon.toLowerCase() !== 'nan' && (
-              <div className="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded">
+              <div className="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded mb-2">
                 Cupom: {promotion.coupon}
               </div>
             )}
           </div>
         </div>
       </Link>
+      
+      {/* Button for direct affiliate link */}
+      <div className="px-4 pb-4">
+        <a
+          href={promotion.affiliateLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block w-full bg-orange-500 hover:bg-orange-600 text-white text-center py-2 px-3 rounded-lg font-medium text-sm transition-colors duration-200"
+          onClick={(e) => e.stopPropagation()}
+        >
+          Pegar Promoção
+        </a>
+      </div>
     </div>
   );
 }

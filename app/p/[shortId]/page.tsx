@@ -83,32 +83,32 @@ export default async function ProductPage({ params }: PageProps) {
         </div>
 
         {/* Product Content */}
-        <main className="container mx-auto px-4 py-8">
+        <main className="container mx-auto px-4 py-4 md:py-8">
           <div className="max-w-2xl mx-auto mb-8">
             <div className="bg-white rounded-lg shadow-lg overflow-hidden">
               {/* Product Image */}
-              <div className="relative h-80 w-full bg-white flex items-center justify-center">
+              <div className="relative h-64 md:h-80 w-full bg-white flex items-center justify-center">
                 <Image
                   src={promotion.imageUrl}
                   alt={promotion.title}
                   fill
-                  className="object-contain p-6"
+                  className="object-contain p-4 md:p-6"
                   sizes="(max-width: 768px) 100vw, 50vw"
                   priority
                 />
               </div>
 
               {/* Product Info */}
-              <div className="p-6">
+              <div className="p-4 md:p-6">
                 {/* Store and Time */}
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center">
                     <Image
                       src={getStoreLogo(promotion.storeName)}
                       alt={`${promotion.storeName} logo`}
-                      width={32}
-                      height={32}
-                      className="rounded-md shadow-sm"
+                      width={28}
+                      height={28}
+                      className="md:w-8 md:h-8 rounded-md shadow-sm"
                     />
                   </div>
                   <span className="text-xs text-gray-500">
@@ -117,18 +117,18 @@ export default async function ProductPage({ params }: PageProps) {
                 </div>
 
                 {/* Title */}
-                <h1 className="text-xl font-bold text-gray-800 mb-4 leading-tight">
+                <h1 className="text-lg md:text-xl font-bold text-gray-800 mb-3 leading-tight">
                   {promotion.title}
                 </h1>
 
                 {/* Pricing */}
-                <div className="mb-6">
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="text-3xl font-bold text-orange-500">
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 md:gap-3 mb-2 flex-wrap">
+                    <span className="text-2xl md:text-3xl font-bold text-orange-500">
                       {promotion.price}
                     </span>
                     {promotion.price_from && (
-                      <span className="text-lg text-gray-500 line-through">
+                      <span className="text-base md:text-lg text-gray-500 line-through">
                         {promotion.price_from}
                       </span>
                     )}
@@ -152,19 +152,19 @@ export default async function ProductPage({ params }: PageProps) {
                     href={promotion.affiliateLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block w-full bg-orange-500 hover:bg-orange-600 text-white text-center py-4 px-6 rounded-lg font-bold text-lg transition-colors duration-200"
+                    className="block w-full bg-orange-500 hover:bg-orange-600 text-white text-center py-3 md:py-4 px-4 md:px-6 rounded-lg font-bold text-base md:text-lg transition-colors duration-200"
                   >
                     Pegar Promoção
                   </Link>
                   
-                  <div className="text-center text-sm text-gray-500">
+                  <div className="text-center text-xs md:text-sm text-gray-500 space-y-1">
                     <p>📦 Frete pode variar conforme sua localização</p>
                     <p>⚡ Oferta por tempo limitado</p>
                   </div>
                 </div>
 
                 {/* Back to site */}
-                <div className="mt-6 pt-4 border-t border-gray-200 text-center">
+                <div className="mt-4 md:mt-6 pt-3 md:pt-4 border-t border-gray-200 text-center">
                   <Link
                     href="/"
                     className="text-orange-500 hover:text-orange-600 text-sm"
