@@ -1,28 +1,66 @@
+'use client';
+
 // Separate analytics admin panel
-import { getAnalyticsData } from '@/lib/analytics';
-import { prisma } from '@/lib/prisma';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 
-interface AnalyticsPageProps {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}
+export default function AnalyticsAdmin() {
+  const searchParams = useSearchParams();
+  const [days, setDays] = useState(30);
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export default async function AnalyticsAdmin({ searchParams }: AnalyticsPageProps) {
-  let params: any = {};
-  let days = 30;
-  let analyticsData = null;
+  useEffect(() => {
+    const daysParam = searchParams.get('days');
+    setDays(daysParam ? Number(daysParam) : 30);
+  }, [searchParams]);
 
-  try {
-    params = await searchParams;
-    days = Number(params.days) || 30;
-    
-    // Get analytics data with error handling
-    analyticsData = await getAnalyticsData(days);
-  } catch (error) {
-    console.error('Analytics page error:', error);
-    analyticsData = null;
+  useEffect(() => {
+    fetchAnalyticsData();
+  }, [days]);
+
+  const fetchAnalyticsData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/analytics/data?days=${days}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch analytics data');
+      }
+      const data = await response.json();
+      setAnalyticsData(data);
+    } catch (err) {
+      console.error('Analytics fetch error:', err);
+      setError('Erro ao carregar dados de analytics');
+      setAnalyticsData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDaysChange = (newDays: number) => {
+    setDays(newDays);
+    const url = new URL(window.location.href);
+    url.searchParams.set('days', newDays.toString());
+    window.history.replaceState({}, '', url.toString());
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 p-8">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-3xl font-bold text-gray-900 mb-8">📊 Analytics Dashboard</h1>
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+            <span className="ml-3 text-gray-600">Carregando analytics...</span>
+          </div>
+        </div>
+      </div>
+    );
   }
   
-  if (!analyticsData) {
+  if (error || !analyticsData) {
     return (
       <div className="min-h-screen bg-gray-100 p-8">
         <div className="max-w-7xl mx-auto">
@@ -64,8 +102,8 @@ export default async function AnalyticsAdmin({ searchParams }: AnalyticsPageProp
           <div className="flex space-x-4">
             <select 
               className="border border-gray-300 rounded px-3 py-2"
-              defaultValue={days}
-              onChange={(e) => window.location.href = `?days=${e.target.value}`}
+              value={days}
+              onChange={(e) => handleDaysChange(Number(e.target.value))}
             >
               <option value="7">Últimos 7 dias</option>
               <option value="30">Últimos 30 dias</option>
