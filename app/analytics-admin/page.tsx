@@ -4,103 +4,94 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-// Line Chart Component
-function LineChart({ data }: { data: any[] }) {
+// Simple Line Chart Component for single metrics
+function SimpleLineChart({ data, title, color, icon }: { data: any[], title: string, color: string, icon: string }) {
   if (!data || data.length === 0) return null;
 
   const width = 800;
-  const height = 300;
+  const height = 250;
   const padding = { top: 20, right: 30, bottom: 40, left: 50 };
   const chartWidth = width - padding.left - padding.right;
   const chartHeight = height - padding.top - padding.bottom;
 
-  // Calculate max values for scaling
-  const maxPageViews = Math.max(...data.map(d => d.pageViews));
-  const maxUniqueVisitors = Math.max(...data.map(d => d.uniqueVisitors));
-  const maxClicks = Math.max(...data.map(d => d.clicks));
-  const maxValue = Math.max(maxPageViews, maxUniqueVisitors, maxClicks);
+  // Calculate max value for scaling
+  const values = data.map(d => d.value);
+  const maxValue = Math.max(...values);
+  const minValue = Math.min(...values);
+  const valueRange = maxValue - minValue || 1; // Avoid division by zero
 
   // Create scaling functions
   const xScale = (index: number) => (index / (data.length - 1)) * chartWidth;
-  const yScale = (value: number) => (value / maxValue) * chartHeight;
+  const yScale = (value: number) => chartHeight - ((value - minValue) / valueRange) * chartHeight;
 
-  // Generate path strings for each line
-  const createPath = (values: number[]) => {
-    return values.map((value, index) => 
-      `${index === 0 ? 'M' : 'L'} ${xScale(index)} ${yScale(value)}`
-    ).join(' ');
-  };
-
-  const pageViewsPath = createPath(data.map(d => d.pageViews));
-  const uniqueVisitorsPath = createPath(data.map(d => d.uniqueVisitors));
-  const clicksPath = createPath(data.map(d => d.clicks));
+  // Generate path string
+  const pathString = values.map((value, index) => 
+    `${index === 0 ? 'M' : 'L'} ${xScale(index)} ${yScale(value)}`
+  ).join(' ');
 
   return (
     <div className="w-full overflow-x-auto">
+      <h4 className="text-md font-semibold text-gray-900 mb-3">{icon} {title}</h4>
       <svg width={width} height={height} className="bg-gray-50 rounded">
         <g transform={`translate(${padding.left}, ${padding.top})`}>
           {/* Grid lines */}
           {[0, 25, 50, 75, 100].map(percent => {
             const y = chartHeight - (percent / 100) * chartHeight;
+            const value = Math.round(minValue + (percent / 100) * valueRange);
             return (
-              <line
-                key={percent}
-                x1={0}
-                y1={y}
-                x2={chartWidth}
-                y2={y}
-                stroke="#e5e7eb"
-                strokeWidth={1}
-              />
+              <g key={percent}>
+                <line
+                  x1={0}
+                  y1={y}
+                  x2={chartWidth}
+                  y2={y}
+                  stroke="#e5e7eb"
+                  strokeWidth={1}
+                />
+                <text
+                  x={-10}
+                  y={y + 4}
+                  textAnchor="end"
+                  fontSize="12"
+                  fill="#6b7280"
+                >
+                  {value}
+                </text>
+              </g>
             );
           })}
 
-          {/* Visualizações line - blue like the card */}
+          {/* Line */}
           <path
-            d={pageViewsPath}
+            d={pathString}
             fill="none"
-            stroke="#2563eb"
-            strokeWidth={2}
-            className="drop-shadow-sm"
-          />
-
-          {/* Visitantes Únicos line - green like the card */}
-          <path
-            d={uniqueVisitorsPath}
-            fill="none"
-            stroke="#16a34a"
-            strokeWidth={2}
-            className="drop-shadow-sm"
-          />
-
-          {/* Cliques line - purple like the card */}
-          <path
-            d={clicksPath}
-            fill="none"
-            stroke="#9333ea"
-            strokeWidth={2}
+            stroke={color}
+            strokeWidth={3}
             className="drop-shadow-sm"
           />
 
           {/* Data points */}
           {data.map((point, index) => (
-            <g key={index}>
-              <circle cx={xScale(index)} cy={yScale(point.pageViews)} r={3} fill="#2563eb" />
-              <circle cx={xScale(index)} cy={yScale(point.uniqueVisitors)} r={3} fill="#16a34a" />
-              <circle cx={xScale(index)} cy={yScale(point.clicks)} r={3} fill="#9333ea" />
-            </g>
+            <circle 
+              key={index}
+              cx={xScale(index)} 
+              cy={yScale(point.value)} 
+              r={4} 
+              fill={color}
+              className="drop-shadow-sm"
+            />
           ))}
 
           {/* X-axis labels */}
           {data.map((point, index) => {
-            if (index % Math.ceil(data.length / 5) === 0) { // Show only some labels to avoid crowding
+            if (index % Math.ceil(data.length / 6) === 0) { // Show fewer labels to avoid crowding
               return (
                 <text
                   key={index}
                   x={xScale(index)}
                   y={chartHeight + 20}
                   textAnchor="middle"
-                  fontSize="12"
+                  fontSize="11"
                   fill="#6b7280"
                 >
                   {new Date(point.date).toLocaleDateString('pt-BR', { 
@@ -112,42 +103,8 @@ function LineChart({ data }: { data: any[] }) {
             }
             return null;
           })}
-
-          {/* Y-axis labels */}
-          {[0, 25, 50, 75, 100].map(percent => {
-            const value = Math.round((percent / 100) * maxValue);
-            const y = chartHeight - (percent / 100) * chartHeight;
-            return (
-              <text
-                key={percent}
-                x={-10}
-                y={y + 4}
-                textAnchor="end"
-                fontSize="12"
-                fill="#6b7280"
-              >
-                {value}
-              </text>
-            );
-          })}
         </g>
       </svg>
-
-      {/* Legend */}
-      <div className="flex justify-center mt-4 space-x-6">
-        <div className="flex items-center">
-          <div className="w-4 h-0.5 bg-blue-600 mr-2"></div>
-          <span className="text-sm text-gray-600">👁️ Visualizações</span>
-        </div>
-        <div className="flex items-center">
-          <div className="w-4 h-0.5 bg-green-600 mr-2"></div>
-          <span className="text-sm text-gray-600">👥 Visitantes Únicos</span>
-        </div>
-        <div className="flex items-center">
-          <div className="w-4 h-0.5 bg-purple-600 mr-2"></div>
-          <span className="text-sm text-gray-600">🔗 Cliques em Promoções</span>
-        </div>
-      </div>
     </div>
   );
 }
@@ -917,11 +874,28 @@ function AnalyticsContent() {
           </div>
         </div>
 
-        {/* Line Chart */}
+        {/* Charts Section */}
         {chartData && chartData.length > 0 && (
-          <div className="bg-white rounded-lg shadow p-6 mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">📈 Tendências Diárias</h3>
-            <LineChart data={chartData} />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* Views Chart */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <SimpleLineChart 
+                data={chartData.map((d: any) => ({ date: d.date, value: d.pageViews }))}
+                title="Visualizações Diárias"
+                color="#2563eb"
+                icon="👁️"
+              />
+            </div>
+            
+            {/* Clicks Chart */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <SimpleLineChart 
+                data={chartData.map((d: any) => ({ date: d.date, value: d.clicks }))}
+                title="Cliques Diários"
+                color="#9333ea"
+                icon="🔗"
+              />
+            </div>
           </div>
         )}
 

@@ -28,10 +28,12 @@ export function usePageView(page: string) {
           },
           body: JSON.stringify({
             type: 'page_view',
-            page,
-            userAgent: navigator.userAgent,
-            referrer: document.referrer,
-            sessionId: getSessionId(),
+            data: {
+              page,
+              userAgent: navigator.userAgent,
+              referrer: document.referrer,
+              sessionId: getSessionId(),
+            }
           }),
         });
       } catch (error) {
@@ -56,10 +58,12 @@ export function trackPromotionClick(promotionId: string, buttonType: string = 'p
         },
         body: JSON.stringify({
           type: 'promotion_click',
-          promotionId,
-          buttonType,
-          userAgent: navigator.userAgent,
-          referrer: document.referrer,
+          data: {
+            promotionId,
+            buttonType,
+            userAgent: navigator.userAgent,
+            referrer: document.referrer,
+          }
         }),
       });
     } catch (error) {
@@ -83,10 +87,12 @@ export function trackPromotionView(promotionId: string, viewType: string = 'card
         },
         body: JSON.stringify({
           type: 'promotion_view',
-          promotionId,
-          viewType,
-          userAgent: navigator.userAgent,
-          referrer: document.referrer,
+          data: {
+            promotionId,
+            viewType,
+            userAgent: navigator.userAgent,
+            referrer: document.referrer,
+          }
         }),
       });
     } catch (error) {

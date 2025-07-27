@@ -531,9 +531,68 @@ export async function getAnalyticsDataByDateRange(
       }
     });
 
+    // Apply filters to the main metrics if filters are active
+    let finalPageViews = pageViews;
+    let finalUniqueVisitors = visitors.length;
+    let finalChartData = chartData;
+    
+    if (filters?.storeName || filters?.hasCoupon !== undefined) {
+      if (promotionsData.length > 0) {
+        // Filter the promotions data to get IDs that match the filters
+        const filteredPromotionIds = promotionsData.filter((promo: any) => {
+          let matches = true;
+          if (filters.storeName && promo.storeName !== filters.storeName) {
+            matches = false;
+          }
+          if (filters.hasCoupon !== undefined) {
+            const hasCoupon = !!promo.coupon;
+            if (hasCoupon !== filters.hasCoupon) {
+              matches = false;
+            }
+          }
+          return matches;
+        }).map((p: any) => p.id);
+        
+        if (filteredPromotionIds.length > 0) {
+          // Filter daily analytics to only include pages from filtered promotions
+          const shortIdToIdMap = new Map();
+          promotionsData.forEach((p: any) => {
+            if (filteredPromotionIds.includes(p.id)) {
+              shortIdToIdMap.set(p.shortId, p.id);
+            }
+          });
+          
+          const filteredDaily = daily.filter((view: any) => {
+            if (!view.page || !view.page.startsWith('/p/')) return false;
+            const shortId = view.page.replace('/p/', '');
+            return shortIdToIdMap.has(shortId);
+          });
+          
+          finalPageViews = filteredDaily.length;
+          
+          // Count unique visitors from filtered pages
+          const uniqueSessionIds = new Set();
+          filteredDaily.forEach((view: any) => {
+            if (view.sessionId) {
+              uniqueSessionIds.add(view.sessionId);
+            }
+          });
+          finalUniqueVisitors = uniqueSessionIds.size;
+          
+          // Recalculate chart data for filtered pages
+          finalChartData = processChartData(startDate, endDate, filteredDaily, clicksDaily);
+        } else {
+          // No promotions match filters
+          finalPageViews = 0;
+          finalUniqueVisitors = 0;
+          finalChartData = [];
+        }
+      }
+    }
+
     return {
-      totalPageViews: pageViews,
-      uniqueVisitors: visitors.length,
+      totalPageViews: finalPageViews,
+      uniqueVisitors: finalUniqueVisitors,
       totalClicks: clicks,
       topPages: processedTopPages,
       topPromotions: topPromotionsWithInfo,
@@ -542,10 +601,10 @@ export async function getAnalyticsDataByDateRange(
       deviceStats: devices,
       dailyStats: daily,
       trafficSources: topSources,
-      chartData: chartData,
+      chartData: finalChartData,
       totalViewsValue: totalViewsValue,
       totalClicksValue: totalClicksValue,
-      conversionRate: pageViews > 0 ? ((clicks / pageViews) * 100).toFixed(2) : '0'
+      conversionRate: finalPageViews > 0 ? ((clicks / finalPageViews) * 100).toFixed(2) : '0'
     };
   } catch (error) {
     console.error('Error fetching analytics data by date range:', error);
@@ -881,9 +940,68 @@ export async function getAnalyticsData(
       }
     });
 
+    // Apply filters to the main metrics if filters are active
+    let finalPageViews = pageViews;
+    let finalUniqueVisitors = visitors.length;
+    let finalChartData = chartData;
+    
+    if (filters?.storeName || filters?.hasCoupon !== undefined) {
+      if (promotionsData.length > 0) {
+        // Filter the promotions data to get IDs that match the filters
+        const filteredPromotionIds = promotionsData.filter((promo: any) => {
+          let matches = true;
+          if (filters.storeName && promo.storeName !== filters.storeName) {
+            matches = false;
+          }
+          if (filters.hasCoupon !== undefined) {
+            const hasCoupon = !!promo.coupon;
+            if (hasCoupon !== filters.hasCoupon) {
+              matches = false;
+            }
+          }
+          return matches;
+        }).map((p: any) => p.id);
+        
+        if (filteredPromotionIds.length > 0) {
+          // Filter daily analytics to only include pages from filtered promotions
+          const shortIdToIdMap = new Map();
+          promotionsData.forEach((p: any) => {
+            if (filteredPromotionIds.includes(p.id)) {
+              shortIdToIdMap.set(p.shortId, p.id);
+            }
+          });
+          
+          const filteredDaily = daily.filter((view: any) => {
+            if (!view.page || !view.page.startsWith('/p/')) return false;
+            const shortId = view.page.replace('/p/', '');
+            return shortIdToIdMap.has(shortId);
+          });
+          
+          finalPageViews = filteredDaily.length;
+          
+          // Count unique visitors from filtered pages
+          const uniqueSessionIds = new Set();
+          filteredDaily.forEach((view: any) => {
+            if (view.sessionId) {
+              uniqueSessionIds.add(view.sessionId);
+            }
+          });
+          finalUniqueVisitors = uniqueSessionIds.size;
+          
+          // Recalculate chart data for filtered pages
+          finalChartData = processChartData(startDate, endDate, filteredDaily, clicksDaily);
+        } else {
+          // No promotions match filters
+          finalPageViews = 0;
+          finalUniqueVisitors = 0;
+          finalChartData = [];
+        }
+      }
+    }
+
     return {
-      totalPageViews: pageViews,
-      uniqueVisitors: visitors.length,
+      totalPageViews: finalPageViews,
+      uniqueVisitors: finalUniqueVisitors,
       totalClicks: clicks,
       topPages: processedTopPages,
       topPromotions: topPromotionsWithInfo,
@@ -892,10 +1010,10 @@ export async function getAnalyticsData(
       deviceStats: devices,
       dailyStats: daily,
       trafficSources: topSources,
-      chartData: chartData,
+      chartData: finalChartData,
       totalViewsValue: totalViewsValue,
       totalClicksValue: totalClicksValue,
-      conversionRate: pageViews > 0 ? ((clicks / pageViews) * 100).toFixed(2) : '0'
+      conversionRate: finalPageViews > 0 ? ((clicks / finalPageViews) * 100).toFixed(2) : '0'
     };
   } catch (error) {
     console.error('Error fetching analytics data:', error);
