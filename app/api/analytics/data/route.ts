@@ -30,17 +30,25 @@ export async function GET(request: NextRequest) {
     const month = searchParams.get('month');
     const year = searchParams.get('year');
     
+    // Get filter parameters
+    const storeName = searchParams.get('storeName');
+    const hasCouponParam = searchParams.get('hasCoupon');
+    
+    const filters: { storeName?: string; hasCoupon?: boolean } = {};
+    if (storeName) filters.storeName = storeName;
+    if (hasCouponParam !== null) filters.hasCoupon = hasCouponParam === 'true';
+    
     let analyticsData;
     
     if (startDay && endDay && month && year) {
       // Custom date range
       const startDate = new Date(Number(year), Number(month) - 1, Number(startDay));
       const endDate = new Date(Number(year), Number(month) - 1, Number(endDay), 23, 59, 59);
-      analyticsData = await getAnalyticsDataByDateRange(startDate, endDate);
+      analyticsData = await getAnalyticsDataByDateRange(startDate, endDate, filters);
     } else {
       // Default days range
       const days = Number(searchParams.get('days')) || 30;
-      analyticsData = await getAnalyticsData(days);
+      analyticsData = await getAnalyticsData(days, filters);
     }
     
     if (!analyticsData) {

@@ -20,6 +20,8 @@ function AnalyticsContent() {
     month: '',
     year: new Date().getFullYear().toString()
   });
+  const [storeFilter, setStoreFilter] = useState('');
+  const [couponFilter, setCouponFilter] = useState<'all' | 'with' | 'without'>('all');
 
   useEffect(() => {
     const daysParam = searchParams.get('days');
@@ -30,13 +32,36 @@ function AnalyticsContent() {
     if (isAuthenticated) {
       fetchAnalyticsData();
     }
-  }, [days, isAuthenticated]);
+  }, [days, isAuthenticated, storeFilter, couponFilter]);
 
   const fetchAnalyticsData = async (customParams?: string) => {
     setLoading(true);
     setError(null);
     try {
-      const params = customParams || `days=${days}`;
+      let params = customParams || `days=${days}`;
+      
+      // Add filter parameters
+      const filterParams = new URLSearchParams();
+      if (!customParams) {
+        filterParams.set('days', days.toString());
+      } else {
+        // Parse existing custom params
+        const existingParams = new URLSearchParams(customParams);
+        existingParams.forEach((value, key) => {
+          filterParams.set(key, value);
+        });
+      }
+      
+      if (storeFilter) {
+        filterParams.set('storeName', storeFilter);
+      }
+      
+      if (couponFilter !== 'all') {
+        filterParams.set('hasCoupon', couponFilter === 'with' ? 'true' : 'false');
+      }
+      
+      params = filterParams.toString();
+      
       const response = await fetch(`/api/analytics/data?${params}`, {
         headers: {
           'Authorization': `Bearer ${apiKey}`
@@ -239,6 +264,8 @@ function AnalyticsContent() {
     totalClicks,
     topPages,
     topPromotions,
+    topStores,
+    couponStats,
     deviceStats,
     dailyStats,
     conversionRate
@@ -273,6 +300,64 @@ function AnalyticsContent() {
               ← Admin Principal
             </a>
           </div>
+        </div>
+
+        {/* Filters Bar */}
+        <div className="bg-white rounded-lg shadow p-4 mb-8 border-l-4 border-green-500">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">🔍 Filtros</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                🏪 Filtro por Loja
+              </label>
+              <input
+                type="text"
+                value={storeFilter}
+                onChange={(e) => setStoreFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                placeholder="Digite o nome da loja (ex: Amazon, Americanas...)"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                🎫 Filtro por Cupom
+              </label>
+              <select
+                value={couponFilter}
+                onChange={(e) => setCouponFilter(e.target.value as 'all' | 'with' | 'without')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              >
+                <option value="all">Todos (com e sem cupom)</option>
+                <option value="with">Apenas com cupom</option>
+                <option value="without">Apenas sem cupom</option>
+              </select>
+            </div>
+          </div>
+          {(storeFilter || couponFilter !== 'all') && (
+            <div className="mt-4 flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                {storeFilter && (
+                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded mr-2">
+                    🏪 Loja: {storeFilter}
+                  </span>
+                )}
+                {couponFilter !== 'all' && (
+                  <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded">
+                    🎫 {couponFilter === 'with' ? 'Com cupom' : 'Sem cupom'}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => {
+                  setStoreFilter('');
+                  setCouponFilter('all');
+                }}
+                className="bg-gray-500 text-white px-3 py-1 rounded text-sm hover:bg-gray-600 transition-colors"
+              >
+                🔄 Limpar Filtros
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Custom Date Filter */}
@@ -402,7 +487,7 @@ function AnalyticsContent() {
           />
         </div>
 
-        {/* Charts Row */}
+        {/* Charts Row 1 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Top Pages */}
           <div className="bg-white rounded-lg shadow p-6">
@@ -452,6 +537,145 @@ function AnalyticsContent() {
                 );
               })}
             </div>
+          </div>
+        </div>
+
+        {/* Charts Row 2 - Store and Coupon Stats */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Top Stores */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">🏪 Lojas Mais Clicadas</h3>
+            <div className="space-y-3">
+              {topStores && topStores.length > 0 ? (
+                topStores.slice(0, 10).map((store: any, index: number) => (
+                  <div key={store.storeName} className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <span className="text-sm text-gray-500 w-6">{index + 1}.</span>
+                      <span className="text-sm text-gray-900 truncate">
+                        {store.storeName}
+                      </span>
+                    </div>
+                    <span className="text-sm font-medium text-green-600">
+                      {store.clicks} cliques
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4 text-gray-500">
+                  <p>📊 Nenhum dado de loja disponível ainda.</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Coupon Stats */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">🎫 Estatísticas de Cupom</h3>
+            <div className="space-y-4">
+              {couponStats ? (
+                <>
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <span className="text-lg mr-2">🎫</span>
+                      <span className="text-sm text-gray-900">Com Cupom</span>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-medium text-green-600">
+                        {couponStats.withCoupon}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {totalClicks > 0 ? ((couponStats.withCoupon / totalClicks) * 100).toFixed(1) : 0}%
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <span className="text-lg mr-2">❌</span>
+                      <span className="text-sm text-gray-900">Sem Cupom</span>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-medium text-red-600">
+                        {couponStats.withoutCoupon}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {totalClicks > 0 ? ((couponStats.withoutCoupon / totalClicks) * 100).toFixed(1) : 0}%
+                      </div>
+                    </div>
+                  </div>
+                  <div className="pt-3 border-t border-gray-200">
+                    <div className="text-center">
+                      <div className="text-lg font-semibold text-gray-900">
+                        Total: {couponStats.withCoupon + couponStats.withoutCoupon}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {couponStats.withCoupon > couponStats.withoutCoupon ? 
+                          '🎫 Promoções com cupom são mais clicadas' : 
+                          '❌ Promoções sem cupom são mais clicadas'
+                        }
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-4 text-gray-500">
+                  <p>📊 Nenhum dado de cupom disponível ainda.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Top Promotions with Details */}
+        <div className="bg-white rounded-lg shadow p-6 mb-8">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">🏆 Promoções Mais Clicadas</h3>
+          <div className="space-y-4">
+            {topPromotions && topPromotions.length > 0 ? (
+              topPromotions.slice(0, 10).map((promotion: any, index: number) => (
+                <div key={promotion.promotionId} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="flex items-center mb-2">
+                        <span className="text-sm text-gray-500 w-6 font-medium">{index + 1}.</span>
+                        <h4 className="text-sm font-semibold text-gray-900 truncate">
+                          {promotion.title}
+                        </h4>
+                      </div>
+                      <div className="ml-6 space-y-1">
+                        <div className="flex items-center text-xs text-gray-600">
+                          <span className="mr-2">🏪</span>
+                          <span className="font-medium">Loja:</span>
+                          <span className="ml-1 bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                            {promotion.storeName}
+                          </span>
+                        </div>
+                        <div className="flex items-center text-xs text-gray-600">
+                          <span className="mr-2">{promotion.hasCoupon ? '🎫' : '❌'}</span>
+                          <span className="font-medium">Cupom:</span>
+                          <span className={`ml-1 px-2 py-0.5 rounded ${
+                            promotion.hasCoupon 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {promotion.hasCoupon ? promotion.coupon || 'Sim' : 'Não'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-lg font-bold text-orange-600">
+                        {promotion.clickCount}
+                      </div>
+                      <div className="text-xs text-gray-500">cliques</div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <p>📊 Nenhum dado de promoção disponível ainda.</p>
+                <p className="text-sm mt-2">Os dados começarão a aparecer após cliques em promoções.</p>
+              </div>
+            )}
           </div>
         </div>
 

@@ -102,8 +102,15 @@ export async function trackPromotionView(data: {
   }
 }
 
-// Analytics data aggregation by custom date range
-export async function getAnalyticsDataByDateRange(startDate: Date, endDate: Date) {
+// Analytics data aggregation by custom date range and filters
+export async function getAnalyticsDataByDateRange(
+  startDate: Date, 
+  endDate: Date, 
+  filters?: {
+    storeName?: string;
+    hasCoupon?: boolean;
+  }
+) {
   try {
     // Safer parallel queries with individual error handling
     const [
@@ -143,7 +150,12 @@ export async function getAnalyticsDataByDateRange(startDate: Date, endDate: Date
           timestamp: { 
             gte: startDate,
             lte: endDate 
-          } 
+          },
+          promotion: filters?.storeName || filters?.hasCoupon !== undefined ? {
+            storeName: filters?.storeName ? { contains: filters.storeName, mode: 'insensitive' } : undefined,
+            coupon: filters?.hasCoupon !== undefined ? 
+              (filters.hasCoupon ? { not: null } : null) : undefined
+          } : undefined
         }
       }),
       
@@ -161,18 +173,31 @@ export async function getAnalyticsDataByDateRange(startDate: Date, endDate: Date
         take: 10
       }),
       
-      // Top clicked promotions
-      prisma.promotionClick.groupBy({
-        by: ['promotionId'],
+      // Top clicked promotions with store and coupon info
+      prisma.promotionClick.findMany({
         where: { 
           timestamp: { 
             gte: startDate,
             lte: endDate 
-          } 
+          },
+          promotion: filters?.storeName || filters?.hasCoupon !== undefined ? {
+            storeName: filters?.storeName ? { contains: filters.storeName, mode: 'insensitive' } : undefined,
+            coupon: filters?.hasCoupon !== undefined ? 
+              (filters.hasCoupon ? { not: null } : null) : undefined
+          } : undefined
         },
-        _count: { promotionId: true },
-        orderBy: { _count: { promotionId: 'desc' } },
-        take: 10
+        include: {
+          promotion: {
+            select: {
+              id: true,
+              title: true,
+              storeName: true,
+              coupon: true
+            }
+          }
+        },
+        orderBy: { timestamp: 'desc' },
+        take: 100 
       }),
       
       // Device statistics
@@ -212,16 +237,74 @@ export async function getAnalyticsDataByDateRange(startDate: Date, endDate: Date
     const visitors = getSettledValue(uniqueVisitors, []);
     const clicks = getSettledValue(totalClicks, 0);
     const pages = getSettledValue(topPages, []);
-    const promotions = getSettledValue(topPromotions, []);
+    const promotionClicks = getSettledValue(topPromotions, []);
     const devices = getSettledValue(deviceStats, []);
     const daily = getSettledValue(dailyStats, []);
+
+    // Process promotion clicks to group by promotion and include store/coupon info
+    const promotionMap = new Map();
+    promotionClicks.forEach((click: any) => {
+      const promotion = click.promotion;
+      const key = promotion.id;
+      
+      if (promotionMap.has(key)) {
+        promotionMap.get(key).clickCount++;
+      } else {
+        promotionMap.set(key, {
+          promotionId: promotion.id,
+          title: promotion.title,
+          storeName: promotion.storeName,
+          hasCoupon: !!promotion.coupon,
+          coupon: promotion.coupon,
+          clickCount: 1
+        });
+      }
+    });
+
+    const topPromotionsWithInfo = Array.from(promotionMap.values())
+      .sort((a, b) => b.clickCount - a.clickCount)
+      .slice(0, 10);
+
+    // Get store statistics
+    const storeStats = new Map();
+    promotionClicks.forEach((click: any) => {
+      const storeName = click.promotion.storeName;
+      if (storeStats.has(storeName)) {
+        storeStats.get(storeName).clicks++;
+      } else {
+        storeStats.set(storeName, {
+          storeName,
+          clicks: 1
+        });
+      }
+    });
+
+    const topStores = Array.from(storeStats.values())
+      .sort((a, b) => b.clicks - a.clicks)
+      .slice(0, 10);
+
+    // Get coupon statistics
+    const couponStats = {
+      withCoupon: 0,
+      withoutCoupon: 0
+    };
+    
+    promotionClicks.forEach((click: any) => {
+      if (click.promotion.coupon) {
+        couponStats.withCoupon++;
+      } else {
+        couponStats.withoutCoupon++;
+      }
+    });
 
     return {
       totalPageViews: pageViews,
       uniqueVisitors: visitors.length,
       totalClicks: clicks,
       topPages: pages,
-      topPromotions: promotions,
+      topPromotions: topPromotionsWithInfo,
+      topStores: topStores,
+      couponStats: couponStats,
       deviceStats: devices,
       dailyStats: daily,
       conversionRate: pageViews > 0 ? ((clicks / pageViews) * 100).toFixed(2) : '0'
@@ -232,8 +315,14 @@ export async function getAnalyticsDataByDateRange(startDate: Date, endDate: Date
   }
 }
 
-// Analytics data aggregation functions
-export async function getAnalyticsData(days: number = 30) {
+// Analytics data aggregation functions with filters
+export async function getAnalyticsData(
+  days: number = 30,
+  filters?: {
+    storeName?: string;
+    hasCoupon?: boolean;
+  }
+) {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
 
@@ -262,7 +351,14 @@ export async function getAnalyticsData(days: number = 30) {
       
       // Total clicks
       prisma.promotionClick.count({
-        where: { timestamp: { gte: startDate } }
+        where: { 
+          timestamp: { gte: startDate },
+          promotion: filters?.storeName || filters?.hasCoupon !== undefined ? {
+            storeName: filters?.storeName ? { contains: filters.storeName, mode: 'insensitive' } : undefined,
+            coupon: filters?.hasCoupon !== undefined ? 
+              (filters.hasCoupon ? { not: null } : null) : undefined
+          } : undefined
+        }
       }),
       
       // Top pages
@@ -274,13 +370,28 @@ export async function getAnalyticsData(days: number = 30) {
         take: 10
       }),
       
-      // Top clicked promotions
-      prisma.promotionClick.groupBy({
-        by: ['promotionId'],
-        where: { timestamp: { gte: startDate } },
-        _count: { promotionId: true },
-        orderBy: { _count: { promotionId: 'desc' } },
-        take: 10
+      // Top clicked promotions with store and coupon info
+      prisma.promotionClick.findMany({
+        where: { 
+          timestamp: { gte: startDate },
+          promotion: filters?.storeName || filters?.hasCoupon !== undefined ? {
+            storeName: filters?.storeName ? { contains: filters.storeName, mode: 'insensitive' } : undefined,
+            coupon: filters?.hasCoupon !== undefined ? 
+              (filters.hasCoupon ? { not: null } : null) : undefined
+          } : undefined
+        },
+        include: {
+          promotion: {
+            select: {
+              id: true,
+              title: true,
+              storeName: true,
+              coupon: true
+            }
+          }
+        },
+        orderBy: { timestamp: 'desc' },
+        take: 100 
       }),
       
       // Device statistics
@@ -310,16 +421,74 @@ export async function getAnalyticsData(days: number = 30) {
     const visitors = getSettledValue(uniqueVisitors, []);
     const clicks = getSettledValue(totalClicks, 0);
     const pages = getSettledValue(topPages, []);
-    const promotions = getSettledValue(topPromotions, []);
+    const promotionClicks = getSettledValue(topPromotions, []);
     const devices = getSettledValue(deviceStats, []);
     const daily = getSettledValue(dailyStats, []);
+
+    // Process promotion clicks to group by promotion and include store/coupon info
+    const promotionMap = new Map();
+    promotionClicks.forEach((click: any) => {
+      const promotion = click.promotion;
+      const key = promotion.id;
+      
+      if (promotionMap.has(key)) {
+        promotionMap.get(key).clickCount++;
+      } else {
+        promotionMap.set(key, {
+          promotionId: promotion.id,
+          title: promotion.title,
+          storeName: promotion.storeName,
+          hasCoupon: !!promotion.coupon,
+          coupon: promotion.coupon,
+          clickCount: 1
+        });
+      }
+    });
+
+    const topPromotionsWithInfo = Array.from(promotionMap.values())
+      .sort((a, b) => b.clickCount - a.clickCount)
+      .slice(0, 10);
+
+    // Get store statistics
+    const storeStats = new Map();
+    promotionClicks.forEach((click: any) => {
+      const storeName = click.promotion.storeName;
+      if (storeStats.has(storeName)) {
+        storeStats.get(storeName).clicks++;
+      } else {
+        storeStats.set(storeName, {
+          storeName,
+          clicks: 1
+        });
+      }
+    });
+
+    const topStores = Array.from(storeStats.values())
+      .sort((a, b) => b.clicks - a.clicks)
+      .slice(0, 10);
+
+    // Get coupon statistics
+    const couponStats = {
+      withCoupon: 0,
+      withoutCoupon: 0
+    };
+    
+    promotionClicks.forEach((click: any) => {
+      if (click.promotion.coupon) {
+        couponStats.withCoupon++;
+      } else {
+        couponStats.withoutCoupon++;
+      }
+    });
 
     return {
       totalPageViews: pageViews,
       uniqueVisitors: visitors.length,
       totalClicks: clicks,
       topPages: pages,
-      topPromotions: promotions,
+      topPromotions: topPromotionsWithInfo,
+      topStores: topStores,
+      couponStats: couponStats,
       deviceStats: devices,
       dailyStats: daily,
       conversionRate: pageViews > 0 ? ((clicks / pageViews) * 100).toFixed(2) : '0'
