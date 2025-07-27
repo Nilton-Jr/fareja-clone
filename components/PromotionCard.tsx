@@ -60,7 +60,7 @@ export default function PromotionCard({ promotion }: PromotionCardProps) {
   const discount = calculateDiscount();
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 relative">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 relative flex flex-col h-full">
       {/* Discount Badge */}
       {discount && (
         <div className="absolute top-2 right-2 z-10">
@@ -70,9 +70,9 @@ export default function PromotionCard({ promotion }: PromotionCardProps) {
         </div>
       )}
       
-      {/* Clickable area for product page */}
-      <Link href={`/p/${promotion.shortId}`} target="_blank" rel="noopener noreferrer">
-        <div className="cursor-pointer">
+      {/* Clickable area for product page - flex-grow para ocupar espaço disponível */}
+      <Link href={`/p/${promotion.shortId}`} target="_blank" rel="noopener noreferrer" className="flex-grow flex flex-col">
+        <div className="cursor-pointer flex-grow flex flex-col">
           <div className="relative h-48 w-full bg-white flex items-center justify-center">
             <Image
               src={promotion.imageUrl}
@@ -93,7 +93,7 @@ export default function PromotionCard({ promotion }: PromotionCardProps) {
             </div>
           </div>
           
-          <div className="p-4 pb-2">
+          <div className="p-4 pb-2 flex-grow flex flex-col">
             <div className="flex items-center justify-end mb-2">
               <span className="text-xs text-gray-500">
                 {formatTimeAgo(promotion.createdAt)}
@@ -115,17 +115,39 @@ export default function PromotionCard({ promotion }: PromotionCardProps) {
               </span>
             </div>
             
-            {promotion.coupon && promotion.coupon.trim() !== '' && promotion.coupon.toLowerCase() !== 'nan' && (
-              <div className="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded mb-2">
-                Cupom: {promotion.coupon}
-              </div>
-            )}
+            {/* Container com altura fixa para cupom */}
+            <div className="h-6 mb-2">
+              {promotion.coupon && promotion.coupon.trim() !== '' && promotion.coupon.toLowerCase() !== 'nan' && (
+                <div 
+                  className="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded cursor-pointer hover:bg-orange-200 transition-colors select-none inline-block"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(promotion.coupon);
+                    // Feedback visual temporário
+                    const element = e.currentTarget;
+                    const originalText = element.innerHTML;
+                    element.innerHTML = '✅ Cupom copiado!';
+                    element.classList.add('bg-green-100', 'text-green-800');
+                    element.classList.remove('bg-orange-100', 'text-orange-800');
+                    setTimeout(() => {
+                      element.innerHTML = originalText;
+                      element.classList.remove('bg-green-100', 'text-green-800');  
+                      element.classList.add('bg-orange-100', 'text-orange-800');
+                    }, 1500);
+                  }}
+                  title="Clique para copiar o cupom"
+                >
+                  Cupom: {promotion.coupon}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </Link>
       
-      {/* Button for direct affiliate link */}
-      <div className="px-4 pb-4">
+      {/* Button for direct affiliate link - sempre na parte inferior */}
+      <div className="px-4 pb-4 mt-auto">
         <a
           href={promotion.affiliateLink}
           target="_blank"
