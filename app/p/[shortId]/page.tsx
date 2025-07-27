@@ -6,6 +6,7 @@ import type { Metadata } from 'next';
 import ProductHeader from '@/components/ProductHeader';
 import RelatedProducts from '@/components/RelatedProducts';
 import MorePromotions from '@/components/MorePromotions';
+import { getStoreLogo } from '@/lib/storeLogo';
 
 interface PageProps {
   params: Promise<{
@@ -57,18 +58,6 @@ export default async function ProductPage({ params }: PageProps) {
 
     const discount = calculateDiscount();
 
-    const getStoreSlogan = (storeName: string) => {
-      const slogans: Record<string, string> = {
-        'Amazon': '🚀 Entrega rápida Amazon',
-        'Mercado Livre': '💰 Melhor preço garantido',
-        'Magalu': '⚡ Magazine Luiza',
-        'AliExpress': '🌍 Direto da China',
-        'Americanas': '🛒 Americanas.com',
-        'Shopee': '🎁 Frete grátis Shopee'
-      };
-      return slogans[storeName] || `📦 ${storeName}`;
-    };
-
     return (
       <div className="min-h-screen bg-gray-100">
         {/* Header Stripe - Sticky */}
@@ -113,9 +102,15 @@ export default async function ProductPage({ params }: PageProps) {
               <div className="p-6">
                 {/* Store and Time */}
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
-                    {getStoreSlogan(promotion.storeName)}
-                  </span>
+                  <div className="flex items-center">
+                    <Image
+                      src={getStoreLogo(promotion.storeName)}
+                      alt={`${promotion.storeName} logo`}
+                      width={32}
+                      height={32}
+                      className="rounded-md shadow-sm"
+                    />
+                  </div>
                   <span className="text-xs text-gray-500">
                     {formatTimeAgo(promotion.createdAt)}
                   </span>
