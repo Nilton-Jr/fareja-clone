@@ -4,6 +4,154 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
+// Line Chart Component
+function LineChart({ data }: { data: any[] }) {
+  if (!data || data.length === 0) return null;
+
+  const width = 800;
+  const height = 300;
+  const padding = { top: 20, right: 30, bottom: 40, left: 50 };
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+
+  // Calculate max values for scaling
+  const maxPageViews = Math.max(...data.map(d => d.pageViews));
+  const maxUniqueVisitors = Math.max(...data.map(d => d.uniqueVisitors));
+  const maxClicks = Math.max(...data.map(d => d.clicks));
+  const maxValue = Math.max(maxPageViews, maxUniqueVisitors, maxClicks);
+
+  // Create scaling functions
+  const xScale = (index: number) => (index / (data.length - 1)) * chartWidth;
+  const yScale = (value: number) => chartHeight - (value / maxValue) * chartHeight;
+
+  // Generate path strings for each line
+  const createPath = (values: number[]) => {
+    return values.map((value, index) => 
+      `${index === 0 ? 'M' : 'L'} ${xScale(index)} ${yScale(value)}`
+    ).join(' ');
+  };
+
+  const pageViewsPath = createPath(data.map(d => d.pageViews));
+  const uniqueVisitorsPath = createPath(data.map(d => d.uniqueVisitors));
+  const clicksPath = createPath(data.map(d => d.clicks));
+
+  return (
+    <div className="w-full overflow-x-auto">
+      <svg width={width} height={height} className="bg-gray-50 rounded">
+        <g transform={`translate(${padding.left}, ${padding.top})`}>
+          {/* Grid lines */}
+          {[0, 25, 50, 75, 100].map(percent => {
+            const y = (percent / 100) * chartHeight;
+            return (
+              <line
+                key={percent}
+                x1={0}
+                y1={y}
+                x2={chartWidth}
+                y2={y}
+                stroke="#e5e7eb"
+                strokeWidth={1}
+              />
+            );
+          })}
+
+          {/* Visualizações line - blue like the card */}
+          <path
+            d={pageViewsPath}
+            fill="none"
+            stroke="#2563eb"
+            strokeWidth={2}
+            className="drop-shadow-sm"
+          />
+
+          {/* Visitantes Únicos line - green like the card */}
+          <path
+            d={uniqueVisitorsPath}
+            fill="none"
+            stroke="#16a34a"
+            strokeWidth={2}
+            className="drop-shadow-sm"
+          />
+
+          {/* Cliques line - purple like the card */}
+          <path
+            d={clicksPath}
+            fill="none"
+            stroke="#9333ea"
+            strokeWidth={2}
+            className="drop-shadow-sm"
+          />
+
+          {/* Data points */}
+          {data.map((point, index) => (
+            <g key={index}>
+              <circle cx={xScale(index)} cy={yScale(point.pageViews)} r={3} fill="#2563eb" />
+              <circle cx={xScale(index)} cy={yScale(point.uniqueVisitors)} r={3} fill="#16a34a" />
+              <circle cx={xScale(index)} cy={yScale(point.clicks)} r={3} fill="#9333ea" />
+            </g>
+          ))}
+
+          {/* X-axis labels */}
+          {data.map((point, index) => {
+            if (index % Math.ceil(data.length / 5) === 0) { // Show only some labels to avoid crowding
+              return (
+                <text
+                  key={index}
+                  x={xScale(index)}
+                  y={chartHeight + 20}
+                  textAnchor="middle"
+                  fontSize="12"
+                  fill="#6b7280"
+                >
+                  {new Date(point.date).toLocaleDateString('pt-BR', { 
+                    day: '2-digit', 
+                    month: '2-digit' 
+                  })}
+                </text>
+              );
+            }
+            return null;
+          })}
+
+          {/* Y-axis labels */}
+          {[0, 25, 50, 75, 100].map(percent => {
+            const value = Math.round((percent / 100) * maxValue);
+            const y = (percent / 100) * chartHeight;
+            return (
+              <text
+                key={percent}
+                x={-10}
+                y={y + 4}
+                textAnchor="end"
+                fontSize="12"
+                fill="#6b7280"
+              >
+                {value}
+              </text>
+            );
+          })}
+        </g>
+      </svg>
+
+      {/* Legend */}
+      <div className="flex justify-center mt-4 space-x-6">
+        <div className="flex items-center">
+          <div className="w-4 h-0.5 bg-blue-600 mr-2"></div>
+          <span className="text-sm text-gray-600">👁️ Visualizações</span>
+        </div>
+        <div className="flex items-center">
+          <div className="w-4 h-0.5 bg-green-600 mr-2"></div>
+          <span className="text-sm text-gray-600">👥 Visitantes Únicos</span>
+        </div>
+        <div className="flex items-center">
+          <div className="w-4 h-0.5 bg-purple-600 mr-2"></div>
+          <span className="text-sm text-gray-600">🔗 Cliques em Promoções</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AnalyticsContent() {
   const searchParams = useSearchParams();
   const [days, setDays] = useState(30);
@@ -22,6 +170,9 @@ function AnalyticsContent() {
   });
   const [storeFilter, setStoreFilter] = useState('');
   const [couponFilter, setCouponFilter] = useState<'all' | 'with' | 'without'>('all');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteMessage, setDeleteMessage] = useState('');
 
   useEffect(() => {
     const daysParam = searchParams.get('days');
@@ -167,6 +318,75 @@ function AnalyticsContent() {
     setShowDateFilter(false);
   };
 
+  const handleDeleteData = async () => {
+    if (!dateFilter.startDay || !dateFilter.endDay || !dateFilter.month || !dateFilter.year) {
+      alert('Por favor, preencha todos os campos de data antes de apagar os dados.');
+      return;
+    }
+
+    const startDate = new Date(Number(dateFilter.year), Number(dateFilter.month) - 1, Number(dateFilter.startDay));
+    const endDate = new Date(Number(dateFilter.year), Number(dateFilter.month) - 1, Number(dateFilter.endDay));
+    
+    const startFormatted = startDate.toLocaleDateString('pt-BR');
+    const endFormatted = endDate.toLocaleDateString('pt-BR');
+
+    // First confirmation
+    const firstConfirm = confirm(
+      `⚠️ ATENÇÃO: Você tem certeza que deseja apagar TODOS os dados de analytics do período de ${startFormatted} até ${endFormatted}?\n\nEsta ação NÃO PODE ser desfeita!`
+    );
+    
+    if (!firstConfirm) return;
+
+    // Second confirmation
+    const secondConfirm = confirm(
+      `🚨 CONFIRMAÇÃO FINAL: Confirme novamente que deseja apagar permanentemente os dados de analytics de ${startFormatted} até ${endFormatted}.\n\nDigite OK para confirmar ou Cancelar para abortar.`
+    );
+    
+    if (!secondConfirm) return;
+
+    setDeleteLoading(true);
+    setDeleteMessage('');
+
+    try {
+      const params = new URLSearchParams({
+        startDay: dateFilter.startDay,
+        endDay: dateFilter.endDay,
+        month: dateFilter.month,
+        year: dateFilter.year
+      });
+
+      const response = await fetch(`/api/analytics/delete?${params}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setDeleteMessage(`✅ ${result.message}\n\nDados apagados:\n- Analytics: ${result.deletedCounts.analytics}\n- Cliques: ${result.deletedCounts.promotionClicks}\n- Visualizações: ${result.deletedCounts.promotionViews}\n- Total: ${result.deletedCounts.total} registros`);
+        
+        // Refresh analytics data
+        fetchAnalyticsData();
+        
+        // Clear the modal after success
+        setTimeout(() => {
+          setShowDeleteModal(false);
+          setDeleteMessage('');
+        }, 3000);
+      } else {
+        setDeleteMessage(`❌ Erro: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      setDeleteMessage('❌ Erro ao apagar dados. Tente novamente.');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   // Show authentication form if not authenticated
   if (!isAuthenticated) {
     return (
@@ -296,6 +516,13 @@ function AnalyticsContent() {
               className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
             >
               📅 Filtro Personalizado
+            </button>
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
+              title="Apagar dados de analytics por período"
+            >
+              🗑️ Apagar Dados
             </button>
             <a 
               href="/admin" 
@@ -465,6 +692,124 @@ function AnalyticsContent() {
           </div>
         )}
 
+        {/* Delete Data Modal */}
+        {showDeleteModal && (
+          <div className="bg-white rounded-lg shadow p-6 mb-8 border-l-4 border-red-500">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">🗑️ Apagar Dados de Analytics</h3>
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+              <p className="text-red-800 text-sm font-medium">
+                ⚠️ <strong>ATENÇÃO:</strong> Esta ação irá apagar permanentemente todos os dados de analytics do período selecionado.
+              </p>
+              <p className="text-red-700 text-sm mt-2">
+                Incluindo: visualizações de páginas, cliques em promoções, dados de visitantes únicos e estatísticas de dispositivos.
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Dia Inicial
+                </label>
+                <input
+                  type="number"
+                  name="startDay"
+                  min="1"
+                  max="31"
+                  value={dateFilter.startDay}
+                  onChange={handleDateFilterChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  placeholder="Ex: 1"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Dia Final
+                </label>
+                <input
+                  type="number"
+                  name="endDay"
+                  min="1"
+                  max="31"
+                  value={dateFilter.endDay}
+                  onChange={handleDateFilterChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  placeholder="Ex: 31"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Mês
+                </label>
+                <select
+                  name="month"
+                  value={dateFilter.month}
+                  onChange={handleDateFilterChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                >
+                  <option value="">Selecione</option>
+                  <option value="1">Janeiro</option>
+                  <option value="2">Fevereiro</option>
+                  <option value="3">Março</option>
+                  <option value="4">Abril</option>
+                  <option value="5">Maio</option>
+                  <option value="6">Junho</option>
+                  <option value="7">Julho</option>
+                  <option value="8">Agosto</option>
+                  <option value="9">Setembro</option>
+                  <option value="10">Outubro</option>
+                  <option value="11">Novembro</option>
+                  <option value="12">Dezembro</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Ano
+                </label>
+                <input
+                  type="number"
+                  name="year"
+                  min="2020"
+                  max="2030"
+                  value={dateFilter.year}
+                  onChange={handleDateFilterChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  placeholder="2024"
+                />
+              </div>
+            </div>
+
+            {deleteMessage && (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+                <pre className="text-sm text-gray-800 whitespace-pre-wrap">{deleteMessage}</pre>
+              </div>
+            )}
+
+            <div className="flex space-x-4">
+              <button
+                onClick={handleDeleteData}
+                disabled={deleteLoading}
+                className={`px-6 py-2 rounded-lg transition-colors ${
+                  deleteLoading 
+                    ? 'bg-gray-400 text-white cursor-not-allowed' 
+                    : 'bg-red-600 text-white hover:bg-red-700'
+                }`}
+              >
+                {deleteLoading ? '⏳ Apagando...' : '🗑️ Apagar Dados'}
+              </button>
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteMessage('');
+                }}
+                disabled={deleteLoading}
+                className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors disabled:opacity-50"
+              >
+                ❌ Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Overview Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <MetricCard
@@ -503,13 +848,25 @@ function AnalyticsContent() {
             <div className="space-y-3">
               {topPages.slice(0, 10).map((page: any, index: number) => (
                 <div key={page.page} className="flex justify-between items-center">
-                  <div className="flex items-center">
-                    <span className="text-sm text-gray-500 w-6">{index + 1}.</span>
-                    <span className="text-sm text-gray-900 truncate">
-                      {page.page === '/' ? 'Homepage' : page.page}
-                    </span>
+                  <div className="flex items-center flex-1 min-w-0">
+                    <span className="text-sm text-gray-500 w-6 flex-shrink-0">{index + 1}.</span>
+                    {page.isProductPage ? (
+                      <a 
+                        href={`/p/${page.shortId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:text-blue-800 hover:underline truncate ml-2"
+                        title={page.title}
+                      >
+                        {page.title}
+                      </a>
+                    ) : (
+                      <span className="text-sm text-gray-900 truncate ml-2">
+                        {page.title}
+                      </span>
+                    )}
                   </div>
-                  <span className="text-sm font-medium text-blue-600">
+                  <span className="text-sm font-medium text-blue-600 flex-shrink-0 ml-2">
                     {page._count.page}
                   </span>
                 </div>
@@ -547,6 +904,14 @@ function AnalyticsContent() {
             </div>
           </div>
         </div>
+
+        {/* Line Chart */}
+        {chartData && chartData.length > 0 && (
+          <div className="bg-white rounded-lg shadow p-6 mb-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">📈 Tendências Diárias</h3>
+            <LineChart data={chartData} />
+          </div>
+        )}
 
         {/* Charts Row 2 - Store, Coupon and Traffic Sources */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -687,9 +1052,15 @@ function AnalyticsContent() {
                     <div className="flex-1">
                       <div className="flex items-center mb-2">
                         <span className="text-sm text-gray-500 w-6 font-medium">{index + 1}.</span>
-                        <h4 className="text-sm font-semibold text-gray-900 truncate">
+                        <a 
+                          href={`/p/${promotion.shortId}`} 
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm font-semibold text-blue-600 hover:text-blue-800 hover:underline truncate"
+                          title={promotion.title}
+                        >
                           {promotion.title}
-                        </h4>
+                        </a>
                       </div>
                       <div className="ml-6 space-y-1">
                         <div className="flex items-center text-xs text-gray-600">

@@ -186,7 +186,8 @@ export async function getAnalyticsDataByDateRange(
       dailyStats,
       trafficSources,
       dailyClicks,
-      promotionViews
+      promotionViews,
+      allPromotions
     ] = await Promise.allSettled([
       // Total page views
       prisma.analytics.count({
@@ -259,7 +260,8 @@ export async function getAnalyticsDataByDateRange(
               title: true,
               storeName: true,
               coupon: true,
-              price: true
+              price: true,
+              shortId: true
             }
           }
         },
@@ -342,10 +344,27 @@ export async function getAnalyticsDataByDateRange(
         include: {
           promotion: {
             select: {
-              price: true
+              price: true,
+              title: true,
+              shortId: true
             }
           }
         }
+      }),
+
+      // Get all promotions for page mapping
+      prisma.promotion.findMany({
+        select: {
+          shortId: true,
+          title: true,
+          storeName: true,
+          coupon: true
+        },
+        where: filters?.storeName || filters?.hasCoupon !== undefined ? {
+          storeName: filters?.storeName ? { equals: filters.storeName } : undefined,
+          coupon: filters?.hasCoupon !== undefined ? 
+            (filters.hasCoupon ? { not: null } : null) : undefined
+        } : undefined
       })
     ]);
 
@@ -363,6 +382,7 @@ export async function getAnalyticsDataByDateRange(
     const sources = getSettledValue(trafficSources, []);
     const clicksDaily = getSettledValue(dailyClicks, []);
     const views = getSettledValue(promotionViews, []);
+    const promotionsData = getSettledValue(allPromotions, []);
 
     // Calculate total values  
     const totalViewsValue = views.reduce((sum: number, view: any) => {
@@ -372,6 +392,41 @@ export async function getAnalyticsDataByDateRange(
     const totalClicksValue = promotionClicks.reduce((sum: number, click: any) => {
       return sum + parsePrice(click.promotion.price);
     }, 0);
+
+    // Create promotion shortId to title mapping
+    const promotionMap = new Map();
+    promotionsData.forEach((promo: any) => {
+      promotionMap.set(promo.shortId, {
+        title: promo.title,
+        shortId: promo.shortId
+      });
+    });
+
+    // Process top pages to include product titles
+    const processedTopPages = pages.map((page: any) => {
+      const pageUrl = page.page;
+      
+      // Check if it's a product page (/p/shortId)
+      const match = pageUrl.match(/^\/p\/([^\/]+)$/);
+      if (match) {
+        const shortId = match[1];
+        const promotion = promotionMap.get(shortId);
+        if (promotion) {
+          return {
+            ...page,
+            title: promotion.title,
+            shortId: promotion.shortId,
+            isProductPage: true
+          };
+        }
+      }
+      
+      return {
+        ...page,
+        title: pageUrl === '/' ? 'Homepage' : pageUrl,
+        isProductPage: false
+      };
+    });
 
     // Process daily chart data
     const chartData = processChartData(startDate, endDate, daily, clicksDaily);
@@ -420,26 +475,27 @@ export async function getAnalyticsDataByDateRange(
       .slice(0, 10);
 
     // Process promotion clicks to group by promotion and include store/coupon info
-    const promotionMap = new Map();
+    const promotionClickMap = new Map();
     promotionClicks.forEach((click: any) => {
       const promotion = click.promotion;
       const key = promotion.id;
       
-      if (promotionMap.has(key)) {
-        promotionMap.get(key).clickCount++;
+      if (promotionClickMap.has(key)) {
+        promotionClickMap.get(key).clickCount++;
       } else {
-        promotionMap.set(key, {
+        promotionClickMap.set(key, {
           promotionId: promotion.id,
           title: promotion.title,
           storeName: promotion.storeName,
           hasCoupon: !!promotion.coupon,
           coupon: promotion.coupon,
+          shortId: promotion.shortId,
           clickCount: 1
         });
       }
     });
 
-    const topPromotionsWithInfo = Array.from(promotionMap.values())
+    const topPromotionsWithInfo = Array.from(promotionClickMap.values())
       .sort((a, b) => b.clickCount - a.clickCount)
       .slice(0, 10);
 
@@ -479,7 +535,7 @@ export async function getAnalyticsDataByDateRange(
       totalPageViews: pageViews,
       uniqueVisitors: visitors.length,
       totalClicks: clicks,
-      topPages: pages,
+      topPages: processedTopPages,
       topPromotions: topPromotionsWithInfo,
       topStores: topStores,
       couponStats: couponStats,
@@ -521,7 +577,8 @@ export async function getAnalyticsData(
       dailyStats,
       trafficSources,
       dailyClicks,
-      promotionViews
+      promotionViews,
+      allPromotions
     ] = await Promise.allSettled([
       // Total page views
       prisma.analytics.count({
@@ -573,7 +630,8 @@ export async function getAnalyticsData(
               title: true,
               storeName: true,
               coupon: true,
-              price: true
+              price: true,
+              shortId: true
             }
           }
         },
@@ -636,10 +694,27 @@ export async function getAnalyticsData(
         include: {
           promotion: {
             select: {
-              price: true
+              price: true,
+              title: true,
+              shortId: true
             }
           }
         }
+      }),
+
+      // Get all promotions for page mapping
+      prisma.promotion.findMany({
+        select: {
+          shortId: true,
+          title: true,
+          storeName: true,
+          coupon: true
+        },
+        where: filters?.storeName || filters?.hasCoupon !== undefined ? {
+          storeName: filters?.storeName ? { equals: filters.storeName } : undefined,
+          coupon: filters?.hasCoupon !== undefined ? 
+            (filters.hasCoupon ? { not: null } : null) : undefined
+        } : undefined
       })
     ]);
 
@@ -657,6 +732,7 @@ export async function getAnalyticsData(
     const sources = getSettledValue(trafficSources, []);
     const clicksDaily = getSettledValue(dailyClicks, []);
     const views = getSettledValue(promotionViews, []);
+    const promotionsData = getSettledValue(allPromotions, []);
 
     // Calculate total values  
     const totalViewsValue = views.reduce((sum: number, view: any) => {
@@ -666,6 +742,41 @@ export async function getAnalyticsData(
     const totalClicksValue = promotionClicks.reduce((sum: number, click: any) => {
       return sum + parsePrice(click.promotion.price);
     }, 0);
+
+    // Create promotion shortId to title mapping
+    const promotionMap = new Map();
+    promotionsData.forEach((promo: any) => {
+      promotionMap.set(promo.shortId, {
+        title: promo.title,
+        shortId: promo.shortId
+      });
+    });
+
+    // Process top pages to include product titles
+    const processedTopPages = pages.map((page: any) => {
+      const pageUrl = page.page;
+      
+      // Check if it's a product page (/p/shortId)
+      const match = pageUrl.match(/^\/p\/([^\/]+)$/);
+      if (match) {
+        const shortId = match[1];
+        const promotion = promotionMap.get(shortId);
+        if (promotion) {
+          return {
+            ...page,
+            title: promotion.title,
+            shortId: promotion.shortId,
+            isProductPage: true
+          };
+        }
+      }
+      
+      return {
+        ...page,
+        title: pageUrl === '/' ? 'Homepage' : pageUrl,
+        isProductPage: false
+      };
+    });
 
     // Process daily chart data
     const chartData = processChartData(startDate, endDate, daily, clicksDaily);
@@ -714,26 +825,27 @@ export async function getAnalyticsData(
       .slice(0, 10);
 
     // Process promotion clicks to group by promotion and include store/coupon info
-    const promotionMap = new Map();
+    const promotionClickMap = new Map();
     promotionClicks.forEach((click: any) => {
       const promotion = click.promotion;
       const key = promotion.id;
       
-      if (promotionMap.has(key)) {
-        promotionMap.get(key).clickCount++;
+      if (promotionClickMap.has(key)) {
+        promotionClickMap.get(key).clickCount++;
       } else {
-        promotionMap.set(key, {
+        promotionClickMap.set(key, {
           promotionId: promotion.id,
           title: promotion.title,
           storeName: promotion.storeName,
           hasCoupon: !!promotion.coupon,
           coupon: promotion.coupon,
+          shortId: promotion.shortId,
           clickCount: 1
         });
       }
     });
 
-    const topPromotionsWithInfo = Array.from(promotionMap.values())
+    const topPromotionsWithInfo = Array.from(promotionClickMap.values())
       .sort((a, b) => b.clickCount - a.clickCount)
       .slice(0, 10);
 
@@ -773,7 +885,7 @@ export async function getAnalyticsData(
       totalPageViews: pageViews,
       uniqueVisitors: visitors.length,
       totalClicks: clicks,
-      topPages: pages,
+      topPages: processedTopPages,
       topPromotions: topPromotionsWithInfo,
       topStores: topStores,
       couponStats: couponStats,
