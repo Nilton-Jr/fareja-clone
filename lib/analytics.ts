@@ -561,7 +561,7 @@ export async function getAnalyticsDataByDateRange(
       if (filteredPromotionShortIds.size > 0) {
         // Filter daily analytics to only include pages from filtered promotions  
         console.log('FILTER DEBUG - Sample promotion shortIds:', Array.from(filteredPromotionShortIds).slice(0, 5));
-        console.log('FILTER DEBUG - Sample daily pages:', daily.slice(0, 10).map(d => d.page));
+        console.log('FILTER DEBUG - Sample daily pages:', daily.slice(0, 10).map((d: any) => d.page));
         
         const filteredDaily = daily.filter((view: any) => {
           if (!view.page || !view.page.startsWith('/p/')) return false;
@@ -982,7 +982,7 @@ export async function getAnalyticsData(
       if (filteredPromotionShortIds.size > 0) {
         // Filter daily analytics to only include pages from filtered promotions  
         console.log('FILTER DEBUG - Sample promotion shortIds:', Array.from(filteredPromotionShortIds).slice(0, 5));
-        console.log('FILTER DEBUG - Sample daily pages:', daily.slice(0, 10).map(d => d.page));
+        console.log('FILTER DEBUG - Sample daily pages:', daily.slice(0, 10).map((d: any) => d.page));
         
         const filteredDaily = daily.filter((view: any) => {
           if (!view.page || !view.page.startsWith('/p/')) return false;
