@@ -1,10 +1,10 @@
 'use client';
 
 // Separate analytics admin panel
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-export default function AnalyticsAdmin() {
+function AnalyticsContent() {
   const searchParams = useSearchParams();
   const [days, setDays] = useState(30);
   const [analyticsData, setAnalyticsData] = useState<any>(null);
@@ -257,6 +257,30 @@ export default function AnalyticsAdmin() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Loading component for Suspense fallback
+function AnalyticsLoading() {
+  return (
+    <div className="min-h-screen bg-gray-100 p-8">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">📊 Analytics Dashboard</h1>
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+          <span className="ml-3 text-gray-600">Inicializando analytics...</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Main component with Suspense boundary
+export default function AnalyticsAdmin() {
+  return (
+    <Suspense fallback={<AnalyticsLoading />}>
+      <AnalyticsContent />
+    </Suspense>
   );
 }
 
