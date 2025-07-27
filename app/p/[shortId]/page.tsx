@@ -67,15 +67,17 @@ export default async function ProductPage({ params }: PageProps) {
         {/* Mobile WhatsApp Header Call */}
         <div className="md:hidden bg-gray-100 sticky top-[72px] z-30 border-t border-gray-300">
           <div className="container mx-auto px-4 py-2">
-            <div className="flex items-center justify-center">
-              <a
-                href="https://chat.whatsapp.com/EIrN3j3ndMH6SV3pCWDfJz"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
-              >
-                📱 Grupo VIP WhatsApp
-              </a>
+            <div className="max-w-2xl mx-auto">
+              <div className="flex items-center justify-end">
+                <a
+                  href="https://chat.whatsapp.com/EIrN3j3ndMH6SV3pCWDfJz"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+                >
+                  📱 Grupo VIP WhatsApp
+                </a>
+              </div>
             </div>
           </div>
         </div>
