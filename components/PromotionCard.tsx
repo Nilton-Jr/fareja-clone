@@ -123,7 +123,7 @@ export default function PromotionCard({ promotion }: PromotionCardProps) {
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    navigator.clipboard.writeText(promotion.coupon);
+                    navigator.clipboard.writeText(promotion.coupon || '');
                     // Feedback visual temporário
                     const element = e.currentTarget;
                     const originalText = element.innerHTML;
