@@ -539,6 +539,7 @@ export async function getAnalyticsDataByDateRange(
     if (filters?.storeName || filters?.hasCoupon !== undefined) {
       // Get shortIds of promotions that match the filters
       const filteredPromotionShortIds = new Set();
+      let matchedCount = 0;
       promotionsData.forEach((promo: any) => {
         let matches = true;
         
@@ -555,17 +556,30 @@ export async function getAnalyticsDataByDateRange(
         
         if (matches) {
           filteredPromotionShortIds.add(promo.shortId);
+          matchedCount++;
+          if (matchedCount <= 3) {
+            console.log('FILTER DEBUG - Matched promotion:', { shortId: promo.shortId, storeName: promo.storeName, hasCoupon: !!promo.coupon });
+          }
         }
       });
       
       if (filteredPromotionShortIds.size > 0) {
         // Filter daily analytics to only include pages from filtered promotions  
+        console.log('FILTER DEBUG - Filter criteria:', { storeName: filters.storeName, hasCoupon: filters.hasCoupon });
+        console.log('FILTER DEBUG - Total promotions found:', promotionsData.length);
+        console.log('FILTER DEBUG - Filtered promotion shortIds count:', filteredPromotionShortIds.size);
         console.log('FILTER DEBUG - Sample promotion shortIds:', Array.from(filteredPromotionShortIds).slice(0, 5));
+        console.log('FILTER DEBUG - Total daily records:', daily.length);
         console.log('FILTER DEBUG - Sample daily pages:', daily.slice(0, 10).map((d: any) => d.page));
         
         const filteredDaily = daily.filter((view: any) => {
           if (!view.page || !view.page.startsWith('/p/')) return false;
-          const shortId = view.page.replace('/p/', '');
+          // Extract shortId more carefully - handle trailing slashes and query params
+          const pageUrl = view.page;
+          const match = pageUrl.match(/^\/p\/([^\/\?]+)/);
+          if (!match) return false;
+          
+          const shortId = match[1];
           const hasMatch = filteredPromotionShortIds.has(shortId);
           if (hasMatch) {
             console.log('FILTER DEBUG - Found matching page:', view.page, 'shortId:', shortId);
@@ -960,6 +974,7 @@ export async function getAnalyticsData(
     if (filters?.storeName || filters?.hasCoupon !== undefined) {
       // Get shortIds of promotions that match the filters
       const filteredPromotionShortIds = new Set();
+      let matchedCount = 0;
       promotionsData.forEach((promo: any) => {
         let matches = true;
         
@@ -976,17 +991,30 @@ export async function getAnalyticsData(
         
         if (matches) {
           filteredPromotionShortIds.add(promo.shortId);
+          matchedCount++;
+          if (matchedCount <= 3) {
+            console.log('FILTER DEBUG - Matched promotion:', { shortId: promo.shortId, storeName: promo.storeName, hasCoupon: !!promo.coupon });
+          }
         }
       });
       
       if (filteredPromotionShortIds.size > 0) {
         // Filter daily analytics to only include pages from filtered promotions  
+        console.log('FILTER DEBUG - Filter criteria:', { storeName: filters.storeName, hasCoupon: filters.hasCoupon });
+        console.log('FILTER DEBUG - Total promotions found:', promotionsData.length);
+        console.log('FILTER DEBUG - Filtered promotion shortIds count:', filteredPromotionShortIds.size);
         console.log('FILTER DEBUG - Sample promotion shortIds:', Array.from(filteredPromotionShortIds).slice(0, 5));
+        console.log('FILTER DEBUG - Total daily records:', daily.length);
         console.log('FILTER DEBUG - Sample daily pages:', daily.slice(0, 10).map((d: any) => d.page));
         
         const filteredDaily = daily.filter((view: any) => {
           if (!view.page || !view.page.startsWith('/p/')) return false;
-          const shortId = view.page.replace('/p/', '');
+          // Extract shortId more carefully - handle trailing slashes and query params
+          const pageUrl = view.page;
+          const match = pageUrl.match(/^\/p\/([^\/\?]+)/);
+          if (!match) return false;
+          
+          const shortId = match[1];
           const hasMatch = filteredPromotionShortIds.has(shortId);
           if (hasMatch) {
             console.log('FILTER DEBUG - Found matching page:', view.page, 'shortId:', shortId);
