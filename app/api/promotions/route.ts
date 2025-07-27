@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { scrapeProductImage } from '@/lib/scraper';
 import { generateShortId } from '@/lib/shortId';
-import { ImageProcessor } from '@/lib/imageProcessor';
 
 export async function POST(request: NextRequest) {
   let requestBody: any = {};
@@ -42,32 +41,17 @@ export async function POST(request: NextRequest) {
     }
     console.log('Final shortId:', shortId);
 
-    // Scrape and optimize the product image for WhatsApp
-    console.log('Starting image scraping and optimization...');
+    // Scrape the product image (sistema de WhatsApp previews mantido intacto)
+    console.log('Starting image scraping...');
     let imageUrl: string;
-    
     try {
-      // First, scrape the original image
-      const originalImageUrl = await scrapeProductImage(affiliateLink, shortId);
-      console.log('Image scraped successfully:', originalImageUrl);
-      
-      // Process and optimize the image for WhatsApp (600x600 WebP)
-      console.log('Processing image for WhatsApp optimization...');
-      const processingResult = await ImageProcessor.processProductImage(originalImageUrl, shortId);
-      
-      if (processingResult.success && processingResult.publicUrl) {
-        imageUrl = ImageProcessor.getAbsoluteImageUrl(processingResult.publicUrl);
-        console.log('Image optimized for WhatsApp:', imageUrl);
-      } else {
-        console.warn('Image optimization failed, using original:', processingResult.error);
-        imageUrl = originalImageUrl;
-      }
-      
+      imageUrl = await scrapeProductImage(affiliateLink, shortId);
+      console.log('Image scraped successfully:', imageUrl);
     } catch (error) {
-      console.error('Image processing failed, using default:', error);
-      // Use default SVG image optimized for WhatsApp (600x600)
-      imageUrl = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNjAwIiBoZWlnaHQ9IjYwMCIgZmlsbD0iI2YzYTc1YyIvPgogIDx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iNDAiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+UHJvZHV0bzwvdGV4dD4KICA8L3N2Zz4=';
-      console.log('Using default optimized image (600x600)');
+      console.error('Erro no scraping, usando imagem padrão:', error);
+      // Usar imagem padrão se scraping falhar - NUNCA quebrar por causa disso
+      imageUrl = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2YzYTc1YyIvPgogIDx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+UHJvZHV0bzwvdGV4dD4KICA8L3N2Zz4=';
+      console.log('Using default image');
     }
 
     // Check if affiliate link already exists
@@ -114,8 +98,8 @@ export async function POST(request: NextRequest) {
       data: {
         shortId,
         title,
-        price: price.toFixed(2),
-        price_from: price_from ? price_from.toFixed(2) : null,
+        price: typeof price === 'string' ? price : price.toFixed(2),
+        price_from: price_from ? (typeof price_from === 'string' ? price_from : price_from.toFixed(2)) : null,
         storeName,
         affiliateLink,
         imageUrl,
