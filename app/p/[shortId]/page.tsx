@@ -142,11 +142,11 @@ export default async function ProductPage({ params }: PageProps) {
                 <div className="mb-4">
                   <div className="flex items-center gap-2 md:gap-3 mb-2 flex-wrap">
                     <span className="text-2xl md:text-3xl font-bold text-orange-500">
-                      {promotion.price}
+                      {promotion.price.startsWith('R$') ? promotion.price : `R$ ${promotion.price}`}
                     </span>
                     {promotion.price_from && (
                       <span className="text-base md:text-lg text-gray-500 line-through">
-                        {promotion.price_from}
+                        {promotion.price_from.startsWith('R$') ? promotion.price_from : `R$ ${promotion.price_from}`}
                       </span>
                     )}
                     {discount && (
