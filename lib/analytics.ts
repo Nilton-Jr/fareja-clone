@@ -507,6 +507,7 @@ export async function getAnalyticsData(
 ) {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
+  const endDate = new Date(); // Current date as end date
 
   try {
     // Safer parallel queries with individual error handling
