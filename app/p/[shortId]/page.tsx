@@ -140,7 +140,26 @@ export default async function ProductPage({ params }: PageProps) {
                   </div>
                   
                   {promotion.coupon && (
-                    <div className="bg-orange-100 text-orange-800 text-sm px-3 py-2 rounded-lg inline-block">
+                    <div 
+                      className="bg-orange-100 text-orange-800 text-sm px-3 py-2 rounded-lg inline-block cursor-pointer hover:bg-orange-200 transition-colors select-none"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        navigator.clipboard.writeText(promotion.coupon || '');
+                        // Feedback visual temporário
+                        const element = e.currentTarget;
+                        const originalText = element.innerHTML;
+                        element.innerHTML = '✅ Cupom copiado!';
+                        element.classList.add('bg-green-100', 'text-green-800');
+                        element.classList.remove('bg-orange-100', 'text-orange-800');
+                        setTimeout(() => {
+                          element.innerHTML = originalText;
+                          element.classList.remove('bg-green-100', 'text-green-800');  
+                          element.classList.add('bg-orange-100', 'text-orange-800');
+                        }, 1500);
+                      }}
+                      title="Clique para copiar o cupom"
+                    >
                       <span className="font-medium">Cupom:</span> {promotion.coupon}
                     </div>
                   )}
