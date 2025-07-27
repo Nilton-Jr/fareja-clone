@@ -70,7 +70,7 @@ export default async function ProductPage({ params }: PageProps) {
               <div className="font-bold text-sm mb-2">Grupo VIP WhatsApp</div>
               <div className="text-xs mb-3">Receba as melhores ofertas em primeira mão!</div>
               <a
-                href="https://chat.whatsapp.com/exemplo"
+                href="https://chat.whatsapp.com/EIrN3j3ndMH6SV3pCWDfJz"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-white text-green-500 px-4 py-2 rounded-full text-sm font-bold hover:bg-gray-100 transition-colors block"
