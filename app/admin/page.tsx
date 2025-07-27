@@ -288,7 +288,16 @@ export default function AdminPage() {
     <div className="min-h-screen bg-gray-100 py-8">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6">
-          <h1 className="text-2xl font-bold mb-6 text-center">Painel Admin</h1>
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold text-center flex-1">Painel Admin</h1>
+            <a 
+              href="/analytics-admin" 
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors text-sm"
+              target="_blank"
+            >
+              📊 Analytics
+            </a>
+          </div>
           
           {/* Tabs */}
           <div className="flex mb-6 border-b">

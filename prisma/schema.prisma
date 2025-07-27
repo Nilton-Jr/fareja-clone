@@ -18,4 +18,68 @@ model Promotion {
   imageUrl      String
   coupon        String?
   createdAt     DateTime @default(now())
+  
+  // Analytics relations (non-breaking)
+  clicks        PromotionClick[]
+  views         PromotionView[]
+}
+
+// Analytics models - completely separate from existing functionality
+model Analytics {
+  id        String   @id @default(cuid())
+  page      String   // URL da página visitada
+  userAgent String?  // Browser/device info
+  referrer  String?  // De onde veio o usuário
+  country   String?  // País (via IP geolocation)
+  city      String?  // Cidade
+  device    String?  // mobile/desktop/tablet
+  timestamp DateTime @default(now())
+  sessionId String?  // Session identifier
+  duration  Int?     // Tempo na página em segundos
+  
+  @@index([page])
+  @@index([timestamp])
+  @@index([sessionId])
+}
+
+model PromotionClick {
+  id          String    @id @default(cuid())
+  promotionId String
+  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  timestamp   DateTime  @default(now())
+  userAgent   String?
+  referrer    String?
+  country     String?
+  device      String?
+  buttonType  String?   // "pegar_promocao", "copiar_cupom", "card_click"
+  
+  @@index([promotionId])
+  @@index([timestamp])
+}
+
+model PromotionView {
+  id          String    @id @default(cuid())
+  promotionId String
+  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  timestamp   DateTime  @default(now())
+  userAgent   String?
+  referrer    String?
+  country     String?
+  device      String?
+  viewType    String?   // "card", "full_page"
+  
+  @@index([promotionId])
+  @@index([timestamp])
+}
+
+model PerformanceMetric {
+  id        String   @id @default(cuid())
+  page      String
+  metric    String   // "LCP", "FID", "CLS", "TTFB"
+  value     Float
+  timestamp DateTime @default(now())
+  userAgent String?
+  
+  @@index([page, metric])
+  @@index([timestamp])
 }

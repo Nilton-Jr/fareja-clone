@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { GoogleAnalytics } from '@next/third-parties/google';
+import AnalyticsTracker from '@/components/AnalyticsTracker';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -37,6 +39,12 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
+        
+        {/* Analytics Components - Non-blocking, async */}
+        <AnalyticsTracker />
+        {process.env.NODE_ENV === 'production' && (
+          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID || 'G-PLACEHOLDER'} />
+        )}
       </body>
     </html>
   );
