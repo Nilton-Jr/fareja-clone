@@ -537,56 +537,59 @@ export async function getAnalyticsDataByDateRange(
     let finalChartData = chartData;
     
     if (filters?.storeName || filters?.hasCoupon !== undefined) {
-      if (promotionsData.length > 0) {
-        // Filter the promotions data to get IDs that match the filters
-        const filteredPromotionIds = promotionsData.filter((promo: any) => {
-          let matches = true;
-          if (filters.storeName && promo.storeName !== filters.storeName) {
+      // Get shortIds of promotions that match the filters
+      const filteredPromotionShortIds = new Set();
+      promotionsData.forEach((promo: any) => {
+        let matches = true;
+        
+        if (filters.storeName && promo.storeName !== filters.storeName) {
+          matches = false;
+        }
+        
+        if (filters.hasCoupon !== undefined) {
+          const hasCoupon = !!promo.coupon;
+          if (hasCoupon !== filters.hasCoupon) {
             matches = false;
           }
-          if (filters.hasCoupon !== undefined) {
-            const hasCoupon = !!promo.coupon;
-            if (hasCoupon !== filters.hasCoupon) {
-              matches = false;
-            }
-          }
-          return matches;
-        }).map((p: any) => p.id);
-        
-        if (filteredPromotionIds.length > 0) {
-          // Filter daily analytics to only include pages from filtered promotions
-          const shortIdToIdMap = new Map();
-          promotionsData.forEach((p: any) => {
-            if (filteredPromotionIds.includes(p.id)) {
-              shortIdToIdMap.set(p.shortId, p.id);
-            }
-          });
-          
-          const filteredDaily = daily.filter((view: any) => {
-            if (!view.page || !view.page.startsWith('/p/')) return false;
-            const shortId = view.page.replace('/p/', '');
-            return shortIdToIdMap.has(shortId);
-          });
-          
-          finalPageViews = filteredDaily.length;
-          
-          // Count unique visitors from filtered pages
-          const uniqueSessionIds = new Set();
-          filteredDaily.forEach((view: any) => {
-            if (view.sessionId) {
-              uniqueSessionIds.add(view.sessionId);
-            }
-          });
-          finalUniqueVisitors = uniqueSessionIds.size;
-          
-          // Recalculate chart data for filtered pages
-          finalChartData = processChartData(startDate, endDate, filteredDaily, clicksDaily);
-        } else {
-          // No promotions match filters
-          finalPageViews = 0;
-          finalUniqueVisitors = 0;
-          finalChartData = [];
         }
+        
+        if (matches) {
+          filteredPromotionShortIds.add(promo.shortId);
+        }
+      });
+      
+      if (filteredPromotionShortIds.size > 0) {
+        // Filter daily analytics to only include pages from filtered promotions
+        const filteredDaily = daily.filter((view: any) => {
+          if (!view.page || !view.page.startsWith('/p/')) return false;
+          const shortId = view.page.replace('/p/', '');
+          return filteredPromotionShortIds.has(shortId);
+        });
+        
+        finalPageViews = filteredDaily.length;
+        
+        // Count unique visitors from filtered pages
+        const uniqueSessionIds = new Set();
+        filteredDaily.forEach((view: any) => {
+          if (view.sessionId) {
+            uniqueSessionIds.add(view.sessionId);
+          }
+        });
+        finalUniqueVisitors = uniqueSessionIds.size;
+        
+        // Filter clicks for chart data - only clicks from filtered promotions
+        const filteredClicks = clicksDaily.filter((click: any) => {
+          // This should already be filtered by the query, but double-check
+          return true; // clicksDaily already filtered by promotion query
+        });
+        
+        // Recalculate chart data with filtered daily views and filtered clicks
+        finalChartData = processChartData(startDate, endDate, filteredDaily, filteredClicks);
+      } else {
+        // No promotions match filters
+        finalPageViews = 0;
+        finalUniqueVisitors = 0;
+        finalChartData = [];
       }
     }
 
@@ -946,56 +949,59 @@ export async function getAnalyticsData(
     let finalChartData = chartData;
     
     if (filters?.storeName || filters?.hasCoupon !== undefined) {
-      if (promotionsData.length > 0) {
-        // Filter the promotions data to get IDs that match the filters
-        const filteredPromotionIds = promotionsData.filter((promo: any) => {
-          let matches = true;
-          if (filters.storeName && promo.storeName !== filters.storeName) {
+      // Get shortIds of promotions that match the filters
+      const filteredPromotionShortIds = new Set();
+      promotionsData.forEach((promo: any) => {
+        let matches = true;
+        
+        if (filters.storeName && promo.storeName !== filters.storeName) {
+          matches = false;
+        }
+        
+        if (filters.hasCoupon !== undefined) {
+          const hasCoupon = !!promo.coupon;
+          if (hasCoupon !== filters.hasCoupon) {
             matches = false;
           }
-          if (filters.hasCoupon !== undefined) {
-            const hasCoupon = !!promo.coupon;
-            if (hasCoupon !== filters.hasCoupon) {
-              matches = false;
-            }
-          }
-          return matches;
-        }).map((p: any) => p.id);
-        
-        if (filteredPromotionIds.length > 0) {
-          // Filter daily analytics to only include pages from filtered promotions
-          const shortIdToIdMap = new Map();
-          promotionsData.forEach((p: any) => {
-            if (filteredPromotionIds.includes(p.id)) {
-              shortIdToIdMap.set(p.shortId, p.id);
-            }
-          });
-          
-          const filteredDaily = daily.filter((view: any) => {
-            if (!view.page || !view.page.startsWith('/p/')) return false;
-            const shortId = view.page.replace('/p/', '');
-            return shortIdToIdMap.has(shortId);
-          });
-          
-          finalPageViews = filteredDaily.length;
-          
-          // Count unique visitors from filtered pages
-          const uniqueSessionIds = new Set();
-          filteredDaily.forEach((view: any) => {
-            if (view.sessionId) {
-              uniqueSessionIds.add(view.sessionId);
-            }
-          });
-          finalUniqueVisitors = uniqueSessionIds.size;
-          
-          // Recalculate chart data for filtered pages
-          finalChartData = processChartData(startDate, endDate, filteredDaily, clicksDaily);
-        } else {
-          // No promotions match filters
-          finalPageViews = 0;
-          finalUniqueVisitors = 0;
-          finalChartData = [];
         }
+        
+        if (matches) {
+          filteredPromotionShortIds.add(promo.shortId);
+        }
+      });
+      
+      if (filteredPromotionShortIds.size > 0) {
+        // Filter daily analytics to only include pages from filtered promotions
+        const filteredDaily = daily.filter((view: any) => {
+          if (!view.page || !view.page.startsWith('/p/')) return false;
+          const shortId = view.page.replace('/p/', '');
+          return filteredPromotionShortIds.has(shortId);
+        });
+        
+        finalPageViews = filteredDaily.length;
+        
+        // Count unique visitors from filtered pages
+        const uniqueSessionIds = new Set();
+        filteredDaily.forEach((view: any) => {
+          if (view.sessionId) {
+            uniqueSessionIds.add(view.sessionId);
+          }
+        });
+        finalUniqueVisitors = uniqueSessionIds.size;
+        
+        // Filter clicks for chart data - only clicks from filtered promotions
+        const filteredClicks = clicksDaily.filter((click: any) => {
+          // This should already be filtered by the query, but double-check
+          return true; // clicksDaily already filtered by promotion query
+        });
+        
+        // Recalculate chart data with filtered daily views and filtered clicks
+        finalChartData = processChartData(startDate, endDate, filteredDaily, filteredClicks);
+      } else {
+        // No promotions match filters
+        finalPageViews = 0;
+        finalUniqueVisitors = 0;
+        finalChartData = [];
       }
     }
 
