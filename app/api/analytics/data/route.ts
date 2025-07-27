@@ -3,6 +3,25 @@ import { getAnalyticsData } from '@/lib/analytics';
 
 export async function GET(request: NextRequest) {
   try {
+    // Check API key authentication
+    const authHeader = request.headers.get('authorization');
+    const expectedKey = process.env.API_SECRET_KEY || 'farejai-secure-2024-admin-key';
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { error: 'Missing or invalid authorization header' }, 
+        { status: 401 }
+      );
+    }
+    
+    const apiKey = authHeader.replace('Bearer ', '');
+    if (apiKey !== expectedKey) {
+      return NextResponse.json(
+        { error: 'Invalid API key' }, 
+        { status: 401 }
+      );
+    }
+    
     const { searchParams } = new URL(request.url);
     const days = Number(searchParams.get('days')) || 30;
     

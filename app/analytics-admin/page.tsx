@@ -10,6 +10,9 @@ function AnalyticsContent() {
   const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [apiKey, setApiKey] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authError, setAuthError] = useState('');
 
   useEffect(() => {
     const daysParam = searchParams.get('days');
@@ -17,14 +20,20 @@ function AnalyticsContent() {
   }, [searchParams]);
 
   useEffect(() => {
-    fetchAnalyticsData();
-  }, [days]);
+    if (isAuthenticated) {
+      fetchAnalyticsData();
+    }
+  }, [days, isAuthenticated]);
 
   const fetchAnalyticsData = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/analytics/data?days=${days}`);
+      const response = await fetch(`/api/analytics/data?days=${days}`, {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`
+        }
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch analytics data');
       }
@@ -39,12 +48,95 @@ function AnalyticsContent() {
     }
   };
 
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+    
+    if (!apiKey.trim()) {
+      setAuthError('❌ Por favor, insira a API Key.');
+      return;
+    }
+
+    // Test API key by making a request
+    try {
+      const response = await fetch(`/api/analytics/data?days=7`, {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`
+        }
+      });
+      
+      if (response.ok) {
+        setIsAuthenticated(true);
+        setAuthError('');
+      } else {
+        setAuthError('❌ API Key inválida. Tente novamente.');
+      }
+    } catch (error) {
+      setAuthError('❌ Erro ao validar API Key. Tente novamente.');
+    }
+  };
+
   const handleDaysChange = (newDays: number) => {
     setDays(newDays);
     const url = new URL(window.location.href);
     url.searchParams.set('days', newDays.toString());
     window.history.replaceState({}, '', url.toString());
   };
+
+  // Show authentication form if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-100 p-8">
+        <div className="max-w-md mx-auto">
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h1 className="text-2xl font-bold text-center mb-6">🔐 Analytics Admin</h1>
+            <p className="text-gray-600 text-center mb-6">
+              Acesso restrito. Insira a API Key para continuar.
+            </p>
+            
+            <form onSubmit={handleAuth} className="space-y-4">
+              <div>
+                <label htmlFor="apiKey" className="block text-sm font-medium text-gray-700 mb-2">
+                  API Key
+                </label>
+                <input
+                  id="apiKey"
+                  type="password"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Digite sua API Key..."
+                  required
+                />
+              </div>
+              
+              {authError && (
+                <div className="text-red-600 text-sm text-center">
+                  {authError}
+                </div>
+              )}
+              
+              <button
+                type="submit"
+                className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                🔓 Acessar Analytics
+              </button>
+            </form>
+            
+            <div className="mt-6 pt-4 border-t border-gray-200 text-center">
+              <a 
+                href="/admin" 
+                className="text-sm text-gray-600 hover:text-gray-800"
+              >
+                ← Voltar para Admin Principal
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
