@@ -230,10 +230,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
     const discount = calculateDiscount();
     
-    // Base URL com HTTPS obrigatório para WhatsApp
-    const rawBaseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
-                       process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` :
-                       'https://fareja.ai';
+    // Base URL com HTTPS obrigatório para WhatsApp - forçar fareja.ai em produção
+    const rawBaseUrl = process.env.NODE_ENV === 'production' 
+                       ? 'https://fareja.ai'
+                       : process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
     const baseUrl = rawBaseUrl.replace('http://', 'https://');
     const pageUrl = `${baseUrl}/p/${shortId}`;
 
@@ -265,14 +265,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       imageUrl = imageUrl.replace('http://', 'https://');
     }
     
-    // Para imagens otimizadas com Next.js (_next/image), usar diretamente
-    // Para imagens locais (/images/), usar diretamente  
-    // Para externas, usar proxy como fallback
-    const secureImageUrl = imageUrl.startsWith(`${baseUrl}/_next/image`) 
-      ? imageUrl
-      : imageUrl.startsWith(`${baseUrl}/images/`) 
-        ? imageUrl 
-        : await optimizeImageUrlForWhatsApp(imageUrl);
+    // Otimizar imagem apenas para meta tags do WhatsApp
+    let secureImageUrl: string;
+    if (imageUrl.startsWith('/images/')) {
+      // Imagens locais já otimizadas
+      secureImageUrl = imageUrl;
+    } else if (imageUrl.startsWith('http')) {
+      // Usar Next.js Image Optimization para URLs externas
+      const encodedUrl = encodeURIComponent(imageUrl);
+      secureImageUrl = `${baseUrl}/_next/image?url=${encodedUrl}&w=1200&q=85`;
+    } else {
+      // Fallback para proxy
+      secureImageUrl = await optimizeImageUrlForWhatsApp(imageUrl);
+    }
     
     // Alt text otimizado para a imagem
     const imageAlt = `${promotion.title} - ${promotion.storeName} - ${promotion.price}`;

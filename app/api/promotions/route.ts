@@ -50,16 +50,9 @@ export async function POST(request: NextRequest) {
       const scrapedImageUrl = await scrapeProductImage(affiliateLink, shortId);
       console.log('Image scraped successfully:', scrapedImageUrl);
       
-      // Depois otimiza usando Next.js Image Optimization do Vercel
-      const optimizedResult = await optimizeImageForWhatsApp(scrapedImageUrl, shortId);
-      
-      if (optimizedResult.success) {
-        imageUrl = optimizedResult.localUrl;
-        console.log(`Image optimized with Vercel: ${imageUrl}`);
-      } else {
-        console.warn('Failed to optimize image, using scraped URL:', optimizedResult.error);
-        imageUrl = scrapedImageUrl;
-      }
+      // Salvar URL original - otimização será feita apenas nas meta tags
+      imageUrl = scrapedImageUrl;
+      console.log(`Image URL saved (will be optimized in meta tags): ${imageUrl}`);
     } catch (error) {
       console.error('Erro no scraping/otimização, usando imagem padrão:', error);
       // Usar imagem padrão se scraping falhar - NUNCA quebrar por causa disso
@@ -76,14 +69,14 @@ export async function POST(request: NextRequest) {
     if (existingPromotion) {
       console.log('Affiliate link already exists, updating with optimized image:', existingPromotion.id);
       
-      // Atualizar promoção existente com nova imagem otimizada se diferente
+      // Atualizar promoção existente com nova imagem se diferente
       if (existingPromotion.imageUrl !== imageUrl) {
-        console.log('Updating existing promotion with optimized image...');
+        console.log('Updating existing promotion with new image...');
         const updatedPromotion = await prisma.promotion.update({
           where: { id: existingPromotion.id },
           data: { imageUrl }
         });
-        console.log('Existing promotion updated with optimized image');
+        console.log('Existing promotion updated with new image');
         
         return NextResponse.json({
           ...updatedPromotion,
@@ -116,14 +109,14 @@ export async function POST(request: NextRequest) {
     if (duplicateTitle) {
       console.log('Title already exists today, updating with optimized image:', duplicateTitle.id);
       
-      // Atualizar promoção existente com nova imagem otimizada se diferente
+      // Atualizar promoção existente com nova imagem se diferente
       if (duplicateTitle.imageUrl !== imageUrl) {
-        console.log('Updating duplicate title promotion with optimized image...');
+        console.log('Updating duplicate title promotion with new image...');
         const updatedPromotion = await prisma.promotion.update({
           where: { id: duplicateTitle.id },
           data: { imageUrl }
         });
-        console.log('Duplicate title promotion updated with optimized image');
+        console.log('Duplicate title promotion updated with new image');
         
         return NextResponse.json({
           ...updatedPromotion,
