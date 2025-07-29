@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { scrapeProductImage } from '@/lib/scraper';
 import { generateShortId } from '@/lib/shortId';
+import { downloadAndOptimizeForWhatsApp } from '@/lib/imageDownloader';
 
 export async function POST(request: NextRequest) {
   let requestBody: any = {};
@@ -41,14 +42,26 @@ export async function POST(request: NextRequest) {
     }
     console.log('Final shortId:', shortId);
 
-    // Scrape the product image (sistema de WhatsApp previews mantido intacto)
-    console.log('Starting image scraping...');
+    // Download e otimização da imagem para armazenamento local
+    console.log('Starting image download and optimization...');
     let imageUrl: string;
     try {
-      imageUrl = await scrapeProductImage(affiliateLink, shortId);
-      console.log('Image scraped successfully:', imageUrl);
+      // Primeiro tenta scraping para obter URL da imagem
+      const scrapedImageUrl = await scrapeProductImage(affiliateLink, shortId);
+      console.log('Image scraped successfully:', scrapedImageUrl);
+      
+      // Depois baixa e otimiza para armazenamento local
+      const optimizedResult = await downloadAndOptimizeForWhatsApp(scrapedImageUrl, shortId);
+      
+      if (optimizedResult.success) {
+        imageUrl = optimizedResult.localUrl;
+        console.log(`Image optimized and saved locally: ${imageUrl} (${Math.round(optimizedResult.fileSize / 1024)}KB)`);
+      } else {
+        console.warn('Failed to optimize image, using scraped URL:', optimizedResult.error);
+        imageUrl = scrapedImageUrl;
+      }
     } catch (error) {
-      console.error('Erro no scraping, usando imagem padrão:', error);
+      console.error('Erro no scraping/otimização, usando imagem padrão:', error);
       // Usar imagem padrão se scraping falhar - NUNCA quebrar por causa disso
       imageUrl = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2YzYTc1YyIvPgogIDx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+UHJvZHV0bzwvdGV4dD4KICA8L3N2Zz4=';
       console.log('Using default image');
