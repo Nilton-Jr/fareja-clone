@@ -74,7 +74,23 @@ export async function POST(request: NextRequest) {
     });
 
     if (existingPromotion) {
-      console.log('Affiliate link already exists, returning existing promotion:', existingPromotion.id);
+      console.log('Affiliate link already exists, updating with optimized image:', existingPromotion.id);
+      
+      // Atualizar promoção existente com nova imagem otimizada se diferente
+      if (existingPromotion.imageUrl !== imageUrl) {
+        console.log('Updating existing promotion with optimized image...');
+        const updatedPromotion = await prisma.promotion.update({
+          where: { id: existingPromotion.id },
+          data: { imageUrl }
+        });
+        console.log('Existing promotion updated with optimized image');
+        
+        return NextResponse.json({
+          ...updatedPromotion,
+          siteLink: `${request.nextUrl.origin}/p/${updatedPromotion.shortId}`
+        }, { status: 200 });
+      }
+      
       return NextResponse.json({
         ...existingPromotion,
         siteLink: `${request.nextUrl.origin}/p/${existingPromotion.shortId}`
@@ -98,7 +114,23 @@ export async function POST(request: NextRequest) {
     });
 
     if (duplicateTitle) {
-      console.log('Title already exists today, returning existing promotion:', duplicateTitle.id);
+      console.log('Title already exists today, updating with optimized image:', duplicateTitle.id);
+      
+      // Atualizar promoção existente com nova imagem otimizada se diferente
+      if (duplicateTitle.imageUrl !== imageUrl) {
+        console.log('Updating duplicate title promotion with optimized image...');
+        const updatedPromotion = await prisma.promotion.update({
+          where: { id: duplicateTitle.id },
+          data: { imageUrl }
+        });
+        console.log('Duplicate title promotion updated with optimized image');
+        
+        return NextResponse.json({
+          ...updatedPromotion,
+          siteLink: `${request.nextUrl.origin}/p/${updatedPromotion.shortId}`
+        }, { status: 200 });
+      }
+      
       return NextResponse.json({
         ...duplicateTitle,
         siteLink: `${request.nextUrl.origin}/p/${duplicateTitle.shortId}`
