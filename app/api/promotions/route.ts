@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { scrapeProductImage } from '@/lib/scraper';
 import { generateShortId } from '@/lib/shortId';
-import { optimizeImageForWhatsApp } from '@/lib/imageOptimizerVercel';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 
 export async function POST(request: NextRequest) {
   let requestBody: any = {};
@@ -50,38 +50,21 @@ export async function POST(request: NextRequest) {
       const scrapedImageUrl = await scrapeProductImage(affiliateLink, shortId);
       console.log('Image scraped successfully:', scrapedImageUrl);
       
-      // SEMPRE baixar imagem para asset local (como Pechinchou)
-      console.log('Downloading image to local assets...');
+      // Upload para Cloudinary - SOLUÇÃO DEFINITIVA
+      console.log('Uploading image to Cloudinary...');
       
       try {
-        const imageResponse = await fetch(scrapedImageUrl);
-        if (!imageResponse.ok) throw new Error('Failed to download');
+        const cloudinaryResult = await uploadToCloudinary(scrapedImageUrl, shortId);
         
-        const buffer = await imageResponse.arrayBuffer();
-        
-        // Determinar extensão
-        const contentType = imageResponse.headers.get('content-type') || '';
-        let extension = 'jpg';
-        if (contentType.includes('webp') || scrapedImageUrl.includes('.webp')) extension = 'webp';
-        else if (contentType.includes('png') || scrapedImageUrl.includes('.png')) extension = 'png';
-        
-        // Criar URL local
-        imageUrl = `/images/products/${shortId}.${extension}`;
-        console.log(`Image will be saved as: ${imageUrl}`);
-        
-        // Agendar download em background (não bloquear a resposta)
-        fetch(`${request.nextUrl.origin}/api/download-promotion-image`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            imageUrl: scrapedImageUrl,
-            shortId,
-            buffer: Buffer.from(buffer).toString('base64')
-          })
-        }).catch(err => console.error('Background download error:', err));
-        
-      } catch (downloadError) {
-        console.warn('Failed to setup local image, using original URL:', downloadError);
+        if (cloudinaryResult.success) {
+          imageUrl = cloudinaryResult.url;
+          console.log(`✅ Image uploaded to Cloudinary: ${imageUrl}`);
+        } else {
+          console.warn('Cloudinary upload failed, using original URL:', cloudinaryResult.error);
+          imageUrl = scrapedImageUrl;
+        }
+      } catch (uploadError) {
+        console.error('Cloudinary error, using original URL:', uploadError);
         imageUrl = scrapedImageUrl;
       }
     } catch (error) {

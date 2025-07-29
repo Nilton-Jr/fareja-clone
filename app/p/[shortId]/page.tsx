@@ -265,18 +265,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       imageUrl = imageUrl.replace('http://', 'https://');
     }
     
-    // SOLUÇÃO PECHINCHOU: Sempre usar assets locais quando disponível
+    // SOLUÇÃO CLOUDINARY: URLs já são otimizadas e servidas via CDN global
     let secureImageUrl: string;
-    if (imageUrl.startsWith('/images/')) {
-      // Imagens locais - ESTA É A SOLUÇÃO!
-      secureImageUrl = `${baseUrl}${imageUrl}`;
-      console.log('Using local asset for WhatsApp:', secureImageUrl);
+    if (imageUrl.includes('cloudinary.com')) {
+      // Imagens do Cloudinary - já otimizadas!
+      secureImageUrl = imageUrl;
+      console.log('Using Cloudinary CDN image:', secureImageUrl);
     } else if (imageUrl.startsWith('http')) {
-      // Fallback temporário para imagens ainda não baixadas
+      // Imagens antigas ou fallback
       secureImageUrl = imageUrl.replace('http://', 'https://');
-      console.warn('Still using external URL - needs migration:', imageUrl);
+    } else if (imageUrl.startsWith('/')) {
+      // Imagens locais (fallback)
+      secureImageUrl = `${baseUrl}${imageUrl}`;
     } else {
-      // Fallback para imagens base64
+      // Base64 ou outros
       secureImageUrl = imageUrl;
     }
     
