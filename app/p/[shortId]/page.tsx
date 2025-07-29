@@ -301,10 +301,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
           {
             url: secureImageUrl,
             secureUrl: secureImageUrl,
-            width: 1200,
-            height: 630,
+            width: 800,
+            height: 800, // WhatsApp prefere imagens quadradas
             alt: imageAlt,
-            type: 'image/webp',
+            type: 'image/jpeg', // WhatsApp prefere JPEG
           }
         ],
       },
@@ -339,20 +339,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       
       // META TAGS ESPECÍFICAS PARA WHATSAPP E REDES SOCIAIS
       other: {
-        // OpenGraph product-specific tags (para WhatsApp reconhecer como produto)
-        'og:type': 'product',
-        'og:product:price:amount': promotion.price.replace(/[^\d,]/g, '').replace(',', '.'),
-        'og:product:price:currency': 'BRL',
-        'og:product:availability': 'in stock',
-        'og:product:condition': 'new',
-        'og:product:brand': promotion.storeName,
+        // Removendo product tags que podem interferir com WhatsApp
         
         // Meta tags específicas do WhatsApp para garantir preview perfeito
-        'og:image:width': '1200',
-        'og:image:height': '630',
-        'og:image:type': 'image/webp',
-        'og:image:alt': imageAlt,
-        'og:image:secure_url': secureImageUrl,
+        'og:image:width': '800',
+        'og:image:height': '800',
+        'og:image:type': 'image/jpeg',
         
         // Meta tags adicionais para melhor compatibilidade
         'twitter:image:width': '1200',

@@ -48,15 +48,16 @@ export async function GET(request: NextRequest) {
         const sharp = require('sharp');
         console.log('🔧 Optimizing large image for WhatsApp...');
         
+        // WhatsApp prefere imagens quadradas 256x256 ou 1200x1200
         const optimizedBuffer = await sharp(Buffer.from(imageBuffer))
-          .resize(1200, 630, {
-            fit: 'contain',
-            background: { r: 255, g: 255, b: 255, alpha: 1 }
+          .resize(800, 800, {
+            fit: 'cover',
+            position: 'center'
           })
           .jpeg({
-            quality: 85,
-            progressive: true,
-            mozjpeg: true
+            quality: 90,
+            progressive: false, // WhatsApp não precisa de progressive JPEG
+            mozjpeg: false
           })
           .toBuffer();
         
