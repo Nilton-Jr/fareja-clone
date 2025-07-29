@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { scrapeProductImage } from '@/lib/scraper';
 import { generateShortId } from '@/lib/shortId';
-import { downloadAndOptimizeForWhatsApp } from '@/lib/imageDownloader';
+import { optimizeImageForWhatsApp } from '@/lib/imageOptimizerVercel';
 
 export async function POST(request: NextRequest) {
   let requestBody: any = {};
@@ -50,12 +50,12 @@ export async function POST(request: NextRequest) {
       const scrapedImageUrl = await scrapeProductImage(affiliateLink, shortId);
       console.log('Image scraped successfully:', scrapedImageUrl);
       
-      // Depois baixa e otimiza para armazenamento local
-      const optimizedResult = await downloadAndOptimizeForWhatsApp(scrapedImageUrl, shortId);
+      // Depois otimiza usando Next.js Image Optimization do Vercel
+      const optimizedResult = await optimizeImageForWhatsApp(scrapedImageUrl, shortId);
       
       if (optimizedResult.success) {
         imageUrl = optimizedResult.localUrl;
-        console.log(`Image optimized and saved locally: ${imageUrl} (${Math.round(optimizedResult.fileSize / 1024)}KB)`);
+        console.log(`Image optimized with Vercel: ${imageUrl}`);
       } else {
         console.warn('Failed to optimize image, using scraped URL:', optimizedResult.error);
         imageUrl = scrapedImageUrl;

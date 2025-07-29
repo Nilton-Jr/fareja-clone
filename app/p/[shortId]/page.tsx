@@ -251,8 +251,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     // Garantir que a imagem seja absoluta e HTTPS para WhatsApp
     let imageUrl = promotion.imageUrl;
     
-    // Se a imagem já é local (começa com /images/), usar diretamente
-    if (imageUrl.startsWith('/images/')) {
+    // Se a imagem já é otimizada (_next/image), usar diretamente
+    if (imageUrl.startsWith('/_next/image')) {
+      imageUrl = `${baseUrl}${imageUrl}`;
+    } else if (imageUrl.startsWith('/images/')) {
+      // Se a imagem já é local (começa com /images/), usar diretamente
       imageUrl = `${baseUrl}${imageUrl}`;
     } else if (!imageUrl.startsWith('http')) {
       imageUrl = `${baseUrl}${promotion.imageUrl}`;
@@ -260,10 +263,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       imageUrl = imageUrl.replace('http://', 'https://');
     }
     
-    // Para imagens locais, não precisamos do proxy. Para externas, usar proxy como fallback
-    const secureImageUrl = imageUrl.startsWith(`${baseUrl}/images/`) 
-      ? imageUrl 
-      : await optimizeImageUrlForWhatsApp(imageUrl);
+    // Para imagens otimizadas com Next.js (_next/image), usar diretamente
+    // Para imagens locais (/images/), usar diretamente  
+    // Para externas, usar proxy como fallback
+    const secureImageUrl = imageUrl.startsWith(`${baseUrl}/_next/image`) 
+      ? imageUrl
+      : imageUrl.startsWith(`${baseUrl}/images/`) 
+        ? imageUrl 
+        : await optimizeImageUrlForWhatsApp(imageUrl);
     
     // Alt text otimizado para a imagem
     const imageAlt = `${promotion.title} - ${promotion.storeName} - ${promotion.price}`;

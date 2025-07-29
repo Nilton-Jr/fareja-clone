@@ -1,7 +1,14 @@
 import { writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
-import sharp from 'sharp';
+// Sharp import with fallback for Vercel serverless environment
+let sharp: any;
+try {
+  sharp = require('sharp');
+} catch (error) {
+  console.warn('Sharp not available in this environment:', error);
+  sharp = null;
+}
 
 export interface OptimizedImageResult {
   success: boolean;
@@ -21,10 +28,34 @@ export async function downloadAndOptimizeForWhatsApp(
   try {
     console.log(`📥 Baixando imagem para ${shortId}: ${imageUrl}`);
 
-    // Criar diretório se não existir
+    // Check if Sharp is available
+    if (!sharp) {
+      console.warn('Sharp not available, returning original URL');
+      return {
+        success: false,
+        localUrl: '',
+        originalUrl: imageUrl,
+        fileSize: 0,
+        error: 'Sharp library not available in serverless environment'
+      };
+    }
+
+    // Criar diretório se não existir (com tratamento para Vercel serverless)
     const imagesDir = path.join(process.cwd(), 'public', 'images', 'products');
-    if (!existsSync(imagesDir)) {
-      await mkdir(imagesDir, { recursive: true });
+    try {
+      if (!existsSync(imagesDir)) {
+        await mkdir(imagesDir, { recursive: true });
+        console.log(`📁 Diretório criado: ${imagesDir}`);
+      }
+    } catch (dirError) {
+      console.error('Erro ao criar diretório no Vercel:', dirError);
+      return {
+        success: false,
+        localUrl: '',
+        originalUrl: imageUrl,
+        fileSize: 0,
+        error: 'Cannot create directory in serverless environment'
+      };
     }
 
     // Download da imagem original
