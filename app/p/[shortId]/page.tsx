@@ -265,17 +265,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       imageUrl = imageUrl.replace('http://', 'https://');
     }
     
-    // Otimizar imagem apenas para meta tags do WhatsApp
+    // Otimizar imagem especificamente para WhatsApp
     let secureImageUrl: string;
     if (imageUrl.startsWith('/images/')) {
       // Imagens locais já otimizadas
       secureImageUrl = imageUrl;
     } else if (imageUrl.startsWith('http')) {
-      // Usar Next.js Image Optimization para URLs externas
+      // Usar proxy especializado para WhatsApp
       const encodedUrl = encodeURIComponent(imageUrl);
-      secureImageUrl = `${baseUrl}/_next/image?url=${encodedUrl}&w=1200&q=85`;
+      secureImageUrl = `${baseUrl}/api/whatsapp-image?url=${encodedUrl}`;
     } else {
-      // Fallback para proxy
+      // Fallback para proxy antigo
       secureImageUrl = await optimizeImageUrlForWhatsApp(imageUrl);
     }
     
