@@ -231,7 +231,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const discount = calculateDiscount();
     
     // Base URL com HTTPS obrigatório para WhatsApp
-    const rawBaseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    const rawBaseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
+                       process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` :
+                       'https://fareja.ai';
     const baseUrl = rawBaseUrl.replace('http://', 'https://');
     const pageUrl = `${baseUrl}/p/${shortId}`;
 
