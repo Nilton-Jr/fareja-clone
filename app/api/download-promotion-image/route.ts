@@ -9,28 +9,37 @@ import path from 'path';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { imageUrl, shortId } = body;
+    const { imageUrl, shortId, buffer: base64Buffer } = body;
 
-    if (!imageUrl || !shortId) {
-      return NextResponse.json({ error: 'Missing imageUrl or shortId' }, { status: 400 });
+    if (!shortId || (!imageUrl && !base64Buffer)) {
+      return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
     }
 
     console.log(`🔄 Post-processing image download for ${shortId}`);
 
-    // Download da imagem
-    const response = await fetch(imageUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
-      },
-    });
+    let buffer: ArrayBuffer;
+    let contentType = 'image/jpeg';
 
-    if (!response.ok) {
-      console.error(`Failed to download image: ${response.status}`);
-      return NextResponse.json({ error: 'Failed to download image' }, { status: 500 });
+    // Se temos o buffer base64, usar ele
+    if (base64Buffer) {
+      buffer = Buffer.from(base64Buffer, 'base64').buffer;
+      console.log('Using provided base64 buffer');
+    } else {
+      // Senão, fazer download
+      const response = await fetch(imageUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+        },
+      });
+
+      if (!response.ok) {
+        console.error(`Failed to download image: ${response.status}`);
+        return NextResponse.json({ error: 'Failed to download image' }, { status: 500 });
+      }
+
+      buffer = await response.arrayBuffer();
+      contentType = response.headers.get('content-type') || 'image/jpeg';
     }
-
-    const buffer = await response.arrayBuffer();
-    const contentType = response.headers.get('content-type') || 'image/jpeg';
     
     // Determinar extensão
     let extension = 'jpg';

@@ -265,15 +265,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       imageUrl = imageUrl.replace('http://', 'https://');
     }
     
-    // SOLUÇÃO DEFINITIVA: Usar URL original diretamente
-    // WhatsApp consegue acessar Amazon e Mercado Livre diretamente
+    // SOLUÇÃO PECHINCHOU: Sempre usar assets locais quando disponível
     let secureImageUrl: string;
     if (imageUrl.startsWith('/images/')) {
-      // Imagens locais
+      // Imagens locais - ESTA É A SOLUÇÃO!
       secureImageUrl = `${baseUrl}${imageUrl}`;
+      console.log('Using local asset for WhatsApp:', secureImageUrl);
     } else if (imageUrl.startsWith('http')) {
-      // USAR URL ORIGINAL DIRETAMENTE - sem proxy!
+      // Fallback temporário para imagens ainda não baixadas
       secureImageUrl = imageUrl.replace('http://', 'https://');
+      console.warn('Still using external URL - needs migration:', imageUrl);
     } else {
       // Fallback para imagens base64
       secureImageUrl = imageUrl;
