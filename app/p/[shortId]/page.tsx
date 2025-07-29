@@ -265,15 +265,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       imageUrl = imageUrl.replace('http://', 'https://');
     }
     
-    // Para meta tags do WhatsApp, usar imagem local se disponível
+    // Para meta tags do WhatsApp, usar CDN simples com cache agressivo
     let secureImageUrl: string;
     if (imageUrl.startsWith('/images/')) {
       // Imagens locais - servidas diretamente do CDN
       secureImageUrl = `${baseUrl}${imageUrl}`;
     } else if (imageUrl.startsWith('http')) {
-      // Imagens externas - continuar usando proxy por enquanto
+      // Usar CDN simples com cache agressivo
       const encodedUrl = encodeURIComponent(imageUrl);
-      secureImageUrl = `${baseUrl}/api/whatsapp-image?url=${encodedUrl}`;
+      secureImageUrl = `${baseUrl}/api/cdn-image?url=${encodedUrl}`;
     } else {
       // Fallback
       secureImageUrl = await optimizeImageUrlForWhatsApp(imageUrl);
