@@ -265,18 +265,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       imageUrl = imageUrl.replace('http://', 'https://');
     }
     
-    // Para meta tags do WhatsApp, usar CDN simples com cache agressivo
+    // SOLUÇÃO DEFINITIVA: Usar URL original diretamente
+    // WhatsApp consegue acessar Amazon e Mercado Livre diretamente
     let secureImageUrl: string;
     if (imageUrl.startsWith('/images/')) {
-      // Imagens locais - servidas diretamente do CDN
+      // Imagens locais
       secureImageUrl = `${baseUrl}${imageUrl}`;
     } else if (imageUrl.startsWith('http')) {
-      // Usar CDN simples com cache agressivo
-      const encodedUrl = encodeURIComponent(imageUrl);
-      secureImageUrl = `${baseUrl}/api/cdn-image?url=${encodedUrl}`;
+      // USAR URL ORIGINAL DIRETAMENTE - sem proxy!
+      secureImageUrl = imageUrl.replace('http://', 'https://');
     } else {
-      // Fallback
-      secureImageUrl = await optimizeImageUrlForWhatsApp(imageUrl);
+      // Fallback para imagens base64
+      secureImageUrl = imageUrl;
     }
     
     // Alt text otimizado para a imagem
@@ -301,8 +301,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
           {
             url: secureImageUrl,
             secureUrl: secureImageUrl,
-            width: 800,
-            height: 800, // WhatsApp prefere imagens quadradas
+            width: 1200,
+            height: 630, // Voltar ao padrão que funcionava parcialmente
             alt: imageAlt,
             type: 'image/jpeg', // WhatsApp prefere JPEG
           }
@@ -342,8 +342,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         // Removendo product tags que podem interferir com WhatsApp
         
         // Meta tags específicas do WhatsApp para garantir preview perfeito
-        'og:image:width': '800',
-        'og:image:height': '800',
+        'og:image:width': '1200',
+        'og:image:height': '630',
         'og:image:type': 'image/jpeg',
         
         // Meta tags adicionais para melhor compatibilidade
