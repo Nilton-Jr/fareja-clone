@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    unoptimized: true,  // Desabilita otimização para usar Cloudinary diretamente
     remotePatterns: [
       {
         protocol: 'http',
