@@ -24,22 +24,18 @@ export async function uploadToCloudinary(
   try {
     console.log(`☁️ Uploading to Cloudinary: ${shortId}`);
 
-    // Upload com transformações para WhatsApp
+    // Upload com transformações aplicadas diretamente na URL
     const result = await cloudinary.uploader.upload(imageUrl, {
       public_id: `produtos/${shortId}`,
       folder: 'fareja',
       resource_type: 'image',
-      // Transformações para otimizar para WhatsApp
-      transformation: [
-        {
-          width: 1200,
-          height: 630,
-          crop: 'fill',
-          gravity: 'center',
-          quality: 'auto:good',
-          format: 'jpg',
-        }
-      ],
+      // Aplicar transformações básicas
+      width: 1200,
+      height: 630,
+      crop: 'fill',
+      gravity: 'center',
+      quality: 'auto:good',
+      format: 'jpg',
       // Tags para organização
       tags: ['produto', 'whatsapp'],
     });
