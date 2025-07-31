@@ -83,27 +83,17 @@ export function getCloudinaryUrl(url: string, options?: {
     return url;
   }
 
-  // Extrair public_id da URL
-  const matches = url.match(/\/v\d+\/(.+)$/);
-  if (!matches) return url;
+  // Construir transformação inline na URL
+  const width = options?.width || 800;
+  const height = options?.height || 800;
+  const crop = options?.crop || 'pad';
+  const format = options?.format || 'jpg';
   
-  const publicId = matches[1].replace(/\.[^/.]+$/, ''); // Remove extensão
-
-  // Aplicar transformações padrão para produtos
-  return cloudinary.url(publicId, {
-    transformation: [
-      {
-        width: options?.width || 800,
-        height: options?.height || 800,
-        crop: options?.crop || 'pad',
-        background: 'white',
-        gravity: 'center',
-        quality: 'auto:good',
-        format: options?.format || 'jpg',
-      }
-    ],
-    secure: true,
-  });
+  // Inserir transformações antes do /v{version}/ na URL
+  const transformations = `c_${crop},w_${width},h_${height},b_white,g_center,q_auto:good,f_${format}`;
+  
+  // Substituir /upload/ por /upload/{transformações}/
+  return url.replace('/upload/', `/upload/${transformations}/`);
 }
 
 /**
@@ -114,25 +104,11 @@ export function getCloudinaryWhatsAppUrl(url: string): string {
     return url;
   }
 
-  const matches = url.match(/\/v\d+\/(.+)$/);
-  if (!matches) return url;
+  // Transformações específicas para WhatsApp
+  const transformations = 'c_pad,w_1200,h_630,b_white,g_center,q_auto:good,f_jpg';
   
-  const publicId = matches[1].replace(/\.[^/.]+$/, '');
-
-  return cloudinary.url(publicId, {
-    transformation: [
-      {
-        width: 1200,
-        height: 630,
-        crop: 'pad',
-        background: 'white',
-        gravity: 'center',
-        quality: 'auto:good',
-        format: 'jpg',
-      }
-    ],
-    secure: true,
-  });
+  // Substituir /upload/ por /upload/{transformações}/
+  return url.replace('/upload/', `/upload/${transformations}/`);
 }
 
 /**
