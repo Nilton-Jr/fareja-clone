@@ -69,6 +69,10 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'i.dell.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
       }
     ],
   },
