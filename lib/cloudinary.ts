@@ -24,27 +24,37 @@ export async function uploadToCloudinary(
   try {
     console.log(`☁️ Uploading to Cloudinary: ${shortId}`);
 
-    // Upload com transformações aplicadas diretamente na URL
+    // Upload simples sem transformações (vamos aplicar na URL)
     const result = await cloudinary.uploader.upload(imageUrl, {
       public_id: `produtos/${shortId}`,
       folder: 'fareja',
       resource_type: 'image',
-      // Aplicar transformações básicas
-      width: 1200,
-      height: 630,
-      crop: 'fill',
-      gravity: 'center',
-      quality: 'auto:good',
-      format: 'jpg',
       // Tags para organização
       tags: ['produto', 'whatsapp'],
     });
 
-    console.log(`✅ Upload successful: ${result.secure_url}`);
+    // Construir URL com transformações
+    // Para página do produto: imagem quadrada que não corta
+    const transformedUrl = cloudinary.url(result.public_id, {
+      transformation: [
+        {
+          width: 800,
+          height: 800,
+          crop: 'pad',  // 'pad' adiciona padding ao invés de cortar
+          background: 'white',
+          gravity: 'center',
+          quality: 'auto:good',
+          format: 'jpg',
+        }
+      ],
+      secure: true,
+    });
+
+    console.log(`✅ Upload successful: ${transformedUrl}`);
 
     return {
       success: true,
-      url: result.secure_url,
+      url: transformedUrl,  // Retornar URL transformada
       publicId: result.public_id,
     };
 
@@ -57,6 +67,72 @@ export async function uploadToCloudinary(
       error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
+}
+
+/**
+ * Gera URL do Cloudinary com transformações específicas
+ */
+export function getCloudinaryUrl(url: string, options?: {
+  width?: number;
+  height?: number;
+  crop?: string;
+  format?: string;
+}): string {
+  // Se não for URL do Cloudinary, retornar como está
+  if (!url.includes('cloudinary.com')) {
+    return url;
+  }
+
+  // Extrair public_id da URL
+  const matches = url.match(/\/v\d+\/(.+)$/);
+  if (!matches) return url;
+  
+  const publicId = matches[1].replace(/\.[^/.]+$/, ''); // Remove extensão
+
+  // Aplicar transformações padrão para produtos
+  return cloudinary.url(publicId, {
+    transformation: [
+      {
+        width: options?.width || 800,
+        height: options?.height || 800,
+        crop: options?.crop || 'pad',
+        background: 'white',
+        gravity: 'center',
+        quality: 'auto:good',
+        format: options?.format || 'jpg',
+      }
+    ],
+    secure: true,
+  });
+}
+
+/**
+ * Gera URL otimizada para WhatsApp (1200x630)
+ */
+export function getCloudinaryWhatsAppUrl(url: string): string {
+  if (!url.includes('cloudinary.com')) {
+    return url;
+  }
+
+  const matches = url.match(/\/v\d+\/(.+)$/);
+  if (!matches) return url;
+  
+  const publicId = matches[1].replace(/\.[^/.]+$/, '');
+
+  return cloudinary.url(publicId, {
+    transformation: [
+      {
+        width: 1200,
+        height: 630,
+        crop: 'pad',
+        background: 'white',
+        gravity: 'center',
+        quality: 'auto:good',
+        format: 'jpg',
+      }
+    ],
+    secure: true,
+  });
 }
 
 /**

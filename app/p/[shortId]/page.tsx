@@ -10,6 +10,7 @@ import CopyableCoupon from '@/components/CopyableCoupon';
 import ProductPageClient from '@/components/ProductPageClient';
 import { getStoreLogo } from '@/lib/storeLogo';
 import { optimizeImageUrlForWhatsApp } from '@/lib/imageOptimizer';
+import { getCloudinaryUrl, getCloudinaryWhatsAppUrl } from '@/lib/cloudinary';
 
 interface PageProps {
   params: Promise<{
@@ -110,7 +111,7 @@ export default async function ProductPage({ params }: PageProps) {
               {/* Product Image */}
               <div className="relative h-64 md:h-80 w-full bg-white flex items-center justify-center">
                 <Image
-                  src={promotion.imageUrl}
+                  src={getCloudinaryUrl(promotion.imageUrl)}
                   alt={promotion.title}
                   fill
                   className="object-contain p-4 md:p-6"
@@ -268,9 +269,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     // SOLUÇÃO CLOUDINARY: URLs já são otimizadas e servidas via CDN global
     let secureImageUrl: string;
     if (imageUrl.includes('cloudinary.com')) {
-      // Imagens do Cloudinary - já otimizadas!
-      secureImageUrl = imageUrl;
-      console.log('Using Cloudinary CDN image:', secureImageUrl);
+      // Imagens do Cloudinary - aplicar transformação para WhatsApp
+      secureImageUrl = getCloudinaryWhatsAppUrl(imageUrl);
+      console.log('Using Cloudinary CDN image with WhatsApp optimization:', secureImageUrl);
     } else if (imageUrl.startsWith('http')) {
       // Imagens antigas ou fallback
       secureImageUrl = imageUrl.replace('http://', 'https://');
