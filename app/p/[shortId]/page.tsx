@@ -12,6 +12,7 @@ import { getStoreLogo } from '@/lib/storeLogo';
 import { optimizeImageUrlForWhatsApp } from '@/lib/imageOptimizer';
 import { getCloudinaryUrl, getCloudinaryWhatsAppUrl } from '@/lib/cloudinary';
 import { normalizeImageUrl, getAbsoluteImageUrl } from '@/lib/urlNormalizer';
+import { getProxiedImageUrl, getWhatsAppOptimizedUrl, needsProxy } from '@/lib/imageProxy';
 
 interface PageProps {
   params: Promise<{
@@ -125,6 +126,11 @@ export default async function ProductPage({ params }: PageProps) {
                     // Se for Cloudinary, aplicar transformações
                     if (normalized.includes('cloudinary.com')) {
                       return getCloudinaryUrl(normalized);
+                    }
+                    
+                    // Se for imagem externa (Amazon, etc), usar proxy Next.js
+                    if (needsProxy(normalized)) {
+                      return getProxiedImageUrl(normalized);
                     }
                     
                     // Se for imagem local, obter URL absoluta
@@ -278,10 +284,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       // Cloudinary com otimizações para WhatsApp
       secureImageUrl = getCloudinaryWhatsAppUrl(normalizedImageUrl);
       console.log('Using Cloudinary CDN image with WhatsApp optimization:', secureImageUrl);
+    } else if (needsProxy(normalizedImageUrl)) {
+      // NOVO: Usar proxy Next.js para imagens externas (Amazon, etc)
+      // Isso faz a imagem parecer "local" para o WhatsApp
+      const proxiedUrl = getProxiedImageUrl(normalizedImageUrl, 1200, 85);
+      secureImageUrl = `${baseUrl}${proxiedUrl}`;
+      console.log('Using Next.js proxied image for WhatsApp:', secureImageUrl);
     } else {
-      // Imagem local ou externa - obter URL absoluta
+      // Imagem local - obter URL absoluta
       secureImageUrl = getAbsoluteImageUrl(normalizedImageUrl, baseUrl);
-      console.log('Using optimized image for WhatsApp:', secureImageUrl);
+      console.log('Using local image for WhatsApp:', secureImageUrl);
     }
     
     // Alt text otimizado para a imagem
