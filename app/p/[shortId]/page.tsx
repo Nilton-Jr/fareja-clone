@@ -319,7 +319,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         card: 'summary_large_image',
         title: title,
         description: description,
-        images: [imageUrl],
+        images: [secureImageUrl],
         site: '@fareja',
         creator: '@fareja',
       },
