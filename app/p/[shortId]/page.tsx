@@ -278,23 +278,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     // Normalizar e processar URL da imagem para meta tags
     const normalizedImageUrl = normalizeImageUrl(promotion.imageUrl, baseUrl);
     
-    // Determinar URL final para WhatsApp
+    // IMPORTANTE: Usar proxy para TODAS as imagens nas meta tags
+    // Isso garante que o WhatsApp veja como imagem "local"
     let secureImageUrl: string;
-    if (normalizedImageUrl.includes('cloudinary.com')) {
-      // Cloudinary com otimizações para WhatsApp
-      secureImageUrl = getCloudinaryWhatsAppUrl(normalizedImageUrl);
-      console.log('Using Cloudinary CDN image with WhatsApp optimization:', secureImageUrl);
-    } else if (needsProxy(normalizedImageUrl)) {
-      // NOVO: Usar proxy Next.js para imagens externas (Amazon, etc)
-      // Isso faz a imagem parecer "local" para o WhatsApp
-      const proxiedUrl = getProxiedImageUrl(normalizedImageUrl, 1200, 85);
-      secureImageUrl = `${baseUrl}${proxiedUrl}`;
-      console.log('Using Next.js proxied image for WhatsApp:', secureImageUrl);
-    } else {
-      // Imagem local - obter URL absoluta
-      secureImageUrl = getAbsoluteImageUrl(normalizedImageUrl, baseUrl);
-      console.log('Using local image for WhatsApp:', secureImageUrl);
-    }
+    
+    // Forçar proxy para TODAS as imagens (incluindo Cloudinary)
+    const proxiedUrl = getProxiedImageUrl(normalizedImageUrl, 1200, 85);
+    secureImageUrl = `${baseUrl}${proxiedUrl}`;
+    console.log('Using Next.js proxied image for WhatsApp (all sources):', secureImageUrl);
     
     // Alt text otimizado para a imagem
     const imageAlt = `${promotion.title} - ${promotion.storeName} - ${promotion.price}`;
