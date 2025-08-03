@@ -11,6 +11,7 @@ import ProductPageClient from '@/components/ProductPageClient';
 import { getStoreLogo } from '@/lib/storeLogo';
 import { optimizeImageUrlForWhatsApp } from '@/lib/imageOptimizer';
 import { getCloudinaryUrl, getCloudinaryWhatsAppUrl } from '@/lib/cloudinary';
+import { normalizeImageUrl, getAbsoluteImageUrl } from '@/lib/urlNormalizer';
 
 interface PageProps {
   params: Promise<{
@@ -111,7 +112,18 @@ export default async function ProductPage({ params }: PageProps) {
               {/* Product Image */}
               <div className="relative h-64 md:h-80 w-full bg-white flex items-center justify-center">
                 <Image
-                  src={getCloudinaryUrl(promotion.imageUrl)}
+                  src={(() => {
+                    // Normalizar URL primeiro
+                    const normalized = normalizeImageUrl(promotion.imageUrl, baseUrl);
+                    
+                    // Se for Cloudinary, aplicar transformações
+                    if (normalized.includes('cloudinary.com')) {
+                      return getCloudinaryUrl(normalized);
+                    }
+                    
+                    // Se for imagem local, obter URL absoluta
+                    return getAbsoluteImageUrl(normalized, baseUrl);
+                  })()}
                   alt={promotion.title}
                   fill
                   className="object-contain p-4 md:p-6"
@@ -251,40 +263,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description = `🔥Corre que acaba rápido!`;
     }
 
-    // Garantir que a imagem seja absoluta e HTTPS para WhatsApp
-    let imageUrl = promotion.imageUrl;
+    // Normalizar e processar URL da imagem para meta tags
+    const normalizedImageUrl = normalizeImageUrl(promotion.imageUrl, baseUrl);
     
-    // Se a imagem já é otimizada (_next/image), usar diretamente
-    if (imageUrl.startsWith('/_next/image')) {
-      imageUrl = `${baseUrl}${imageUrl}`;
-    } else if (imageUrl.startsWith('/images/')) {
-      // Se a imagem já é local (começa com /images/), usar diretamente
-      imageUrl = `${baseUrl}${imageUrl}`;
-    } else if (!imageUrl.startsWith('http')) {
-      imageUrl = `${baseUrl}${promotion.imageUrl}`;
-    } else {
-      imageUrl = imageUrl.replace('http://', 'https://');
-    }
-    
-    // NOVA SOLUÇÃO: Imagens locais otimizadas para WhatsApp
+    // Determinar URL final para WhatsApp
     let secureImageUrl: string;
-    if (imageUrl.startsWith('/images/')) {
-      // PRIORIDADE: Imagens locais otimizadas
-      secureImageUrl = `${baseUrl}${imageUrl}`;
-      console.log('Using local optimized image for WhatsApp:', secureImageUrl);
-    } else if (imageUrl.includes('cloudinary.com')) {
-      // Fallback: Imagens do Cloudinary
-      secureImageUrl = getCloudinaryWhatsAppUrl(imageUrl);
+    if (normalizedImageUrl.includes('cloudinary.com')) {
+      // Cloudinary com otimizações para WhatsApp
+      secureImageUrl = getCloudinaryWhatsAppUrl(normalizedImageUrl);
       console.log('Using Cloudinary CDN image with WhatsApp optimization:', secureImageUrl);
-    } else if (imageUrl.startsWith('http')) {
-      // Imagens antigas ou fallback
-      secureImageUrl = imageUrl.replace('http://', 'https://');
-    } else if (imageUrl.startsWith('/')) {
-      // Outras imagens locais
-      secureImageUrl = `${baseUrl}${imageUrl}`;
     } else {
-      // Base64 ou outros
-      secureImageUrl = imageUrl;
+      // Imagem local ou externa - obter URL absoluta
+      secureImageUrl = getAbsoluteImageUrl(normalizedImageUrl, baseUrl);
+      console.log('Using optimized image for WhatsApp:', secureImageUrl);
     }
     
     // Alt text otimizado para a imagem
