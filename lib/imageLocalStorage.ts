@@ -3,12 +3,16 @@ import path from 'path';
 import { createHash } from 'crypto';
 import sharp from 'sharp';
 
-// Diretório para salvar imagens localmente
-const PUBLIC_IMAGES_DIR = path.join(process.cwd(), 'public', 'images', 'products');
+// Diretório para salvar imagens - usar /tmp no Vercel
+const isVercel = process.env.VERCEL || process.env.VERCEL_ENV;
+const PUBLIC_IMAGES_DIR = isVercel 
+  ? path.join('/tmp', 'images', 'products')
+  : path.join(process.cwd(), 'public', 'images', 'products');
 
 // Garantir que o diretório existe
 if (!fs.existsSync(PUBLIC_IMAGES_DIR)) {
   fs.mkdirSync(PUBLIC_IMAGES_DIR, { recursive: true });
+  console.log(`📁 [ImageLocalStorage] Diretório criado: ${PUBLIC_IMAGES_DIR}`);
 }
 
 /**
@@ -73,6 +77,14 @@ export async function saveImageLocally(imageUrl: string): Promise<string> {
     // Salvar arquivo
     fs.writeFileSync(filePath, optimizedBuffer);
     console.log('💾 [ImageLocalStorage] Imagem salva:', filePath);
+    
+    // No Vercel, precisamos usar uma solução diferente
+    if (isVercel) {
+      console.warn('⚠️  [ImageLocalStorage] Vercel detectado - sistema de arquivos é read-only');
+      console.warn('⚠️  [ImageLocalStorage] Retornando URL original. Considere usar Cloudinary.');
+      // Em produção no Vercel, não podemos salvar localmente
+      return imageUrl;
+    }
     
     // Gerar versão WebP para melhor performance (opcional)
     try {

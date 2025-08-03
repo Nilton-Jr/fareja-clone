@@ -51,32 +51,24 @@ export async function POST(request: NextRequest) {
       const scrapedImageUrl = await scrapeProductImage(affiliateLink, shortId);
       console.log('Image scraped successfully:', scrapedImageUrl);
       
-      // NOVA SOLUÇÃO: Salvar imagem localmente otimizada para WhatsApp
-      console.log('Saving image locally with WhatsApp optimization...');
+      // Usar Cloudinary para otimização de imagens (compatível com Vercel)
+      console.log('🌐 Otimizando imagem com Cloudinary...');
       
       try {
-        // Primeiro tenta salvar localmente
-        const localImagePath = await saveImageLocally(scrapedImageUrl);
-        imageUrl = localImagePath;
-        console.log(`✅ Image saved locally: ${imageUrl}`);
-      } catch (localError) {
-        console.warn('Local save failed, trying Cloudinary fallback:', localError);
+        // VERCEL: Sistema de arquivos é read-only, usar Cloudinary
+        console.log('🌐 Usando Cloudinary para otimização de imagens (Vercel compatible)');
+        const cloudinaryResult = await uploadToCloudinary(scrapedImageUrl, shortId);
         
-        // Fallback para Cloudinary se falhar local
-        try {
-          const cloudinaryResult = await uploadToCloudinary(scrapedImageUrl, shortId);
-          
-          if (cloudinaryResult.success) {
-            imageUrl = cloudinaryResult.url;
-            console.log(`✅ Image uploaded to Cloudinary (fallback): ${imageUrl}`);
-          } else {
-            console.warn('Cloudinary upload failed, using original URL:', cloudinaryResult.error);
-            imageUrl = scrapedImageUrl;
-          }
-        } catch (uploadError) {
-          console.error('Cloudinary error, using original URL:', uploadError);
+        if (cloudinaryResult.success) {
+          imageUrl = cloudinaryResult.url;
+          console.log(`✅ Image uploaded to Cloudinary: ${imageUrl}`);
+        } else {
+          console.warn('Cloudinary upload failed, using original URL:', cloudinaryResult.error);
           imageUrl = scrapedImageUrl;
         }
+      } catch (uploadError) {
+        console.error('Cloudinary error, using original URL:', uploadError);
+        imageUrl = scrapedImageUrl;
       }
     } catch (error) {
       console.error('Erro no scraping/otimização, usando imagem padrão:', error);
