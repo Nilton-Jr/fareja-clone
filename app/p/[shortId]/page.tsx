@@ -266,17 +266,21 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       imageUrl = imageUrl.replace('http://', 'https://');
     }
     
-    // SOLUÇÃO CLOUDINARY: URLs já são otimizadas e servidas via CDN global
+    // NOVA SOLUÇÃO: Imagens locais otimizadas para WhatsApp
     let secureImageUrl: string;
-    if (imageUrl.includes('cloudinary.com')) {
-      // Imagens do Cloudinary - aplicar transformação para WhatsApp
+    if (imageUrl.startsWith('/images/')) {
+      // PRIORIDADE: Imagens locais otimizadas
+      secureImageUrl = `${baseUrl}${imageUrl}`;
+      console.log('Using local optimized image for WhatsApp:', secureImageUrl);
+    } else if (imageUrl.includes('cloudinary.com')) {
+      // Fallback: Imagens do Cloudinary
       secureImageUrl = getCloudinaryWhatsAppUrl(imageUrl);
       console.log('Using Cloudinary CDN image with WhatsApp optimization:', secureImageUrl);
     } else if (imageUrl.startsWith('http')) {
       // Imagens antigas ou fallback
       secureImageUrl = imageUrl.replace('http://', 'https://');
     } else if (imageUrl.startsWith('/')) {
-      // Imagens locais (fallback)
+      // Outras imagens locais
       secureImageUrl = `${baseUrl}${imageUrl}`;
     } else {
       // Base64 ou outros

@@ -34,10 +34,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="pt-BR">
+      <head>
+        {/* Meta tags críticas devem vir ANTES de qualquer CSS para WhatsApp funcionar */}
+        {/* O Next.js injetará as meta tags específicas de cada página aqui */}
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        
         {children}
         
         {/* Analytics Components - Non-blocking, async */}
