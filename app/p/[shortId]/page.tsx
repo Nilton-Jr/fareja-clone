@@ -21,6 +21,12 @@ interface PageProps {
 
 export default async function ProductPage({ params }: PageProps) {
   const { shortId } = await params;
+  
+  // Definir baseUrl no início do componente
+  const isProd = process.env.NODE_ENV === 'production';
+  const rawBaseUrl = isProd ? 'https://www.fareja.ai' 
+                            : process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+  const baseUrl = rawBaseUrl.replace('http://', 'https://');
 
   try {
     const promotion = await prisma.promotion.findUnique({
