@@ -8,6 +8,7 @@ import RelatedProducts from '@/components/RelatedProducts';
 import MorePromotions from '@/components/MorePromotions';
 import CopyableCoupon from '@/components/CopyableCoupon';
 import ProductPageClient from '@/components/ProductPageClient';
+import OptimizedHead from '@/components/OptimizedHead';
 import { getStoreLogo } from '@/lib/storeLogo';
 import { optimizeImageUrlForWhatsApp } from '@/lib/imageOptimizer';
 import { getCloudinaryUrl, getCloudinaryWhatsAppUrl } from '@/lib/cloudinary';
@@ -72,6 +73,9 @@ export default async function ProductPage({ params }: PageProps) {
 
     return (
       <div className="min-h-screen bg-gray-100">
+        {/* Head Size Checker for WhatsApp OG Tags */}
+        <OptimizedHead />
+        
         {/* Header Stripe - Sticky */}
         <ProductHeader />
         
@@ -310,11 +314,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
             url: secureImageUrl,
             secureUrl: secureImageUrl,
             width: 1200,
-            height: 630, // Voltar ao padrão que funcionava parcialmente
+            height: 630, // Proporção 1.91:1 recomendada pelo WhatsApp
             alt: imageAlt,
             type: 'image/jpeg', // WhatsApp prefere JPEG
           }
         ],
+        // Tags adicionais para melhor compatibilidade com crawlers
+        // @ts-ignore - Next.js não tem tipos para estas propriedades extras mas são válidas
+        'image:width': '1200',
+        'image:height': '630',
       },
       
       // TWITTER CARD PARA OUTRAS PLATAFORMAS
