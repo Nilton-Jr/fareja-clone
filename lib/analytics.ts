@@ -35,18 +35,19 @@ export async function trackPageView(data: {
   sessionId?: string | null | undefined;
 }): Promise<void> {
   try {
-    // Run async without blocking the main thread
-    setImmediate(async () => {
-      await prisma.analytics.create({
-        data: {
-          page: data.page,
-          userAgent: data.userAgent,
-          referrer: data.referrer,
-          sessionId: data.sessionId,
-          device: getDeviceType(data.userAgent),
-          // country and city can be added later with IP geolocation
-        }
-      });
+    // Use Promise instead of setImmediate to avoid connection pool issues
+    prisma.analytics.create({
+      data: {
+        page: data.page,
+        userAgent: data.userAgent,
+        referrer: data.referrer,
+        sessionId: data.sessionId,
+        device: getDeviceType(data.userAgent),
+        // country and city can be added later with IP geolocation
+      }
+    }).catch(error => {
+      // Silently fail to not impact user experience
+      console.error('Analytics tracking error:', error);
     });
   } catch (error) {
     // Silently fail to not impact user experience
@@ -62,16 +63,16 @@ export async function trackPromotionClick(data: {
   referrer?: string | null | undefined;
 }): Promise<void> {
   try {
-    setImmediate(async () => {
-      await prisma.promotionClick.create({
-        data: {
-          promotionId: data.promotionId,
-          buttonType: data.buttonType,
-          userAgent: data.userAgent,
-          referrer: data.referrer,
-          device: getDeviceType(data.userAgent),
-        }
-      });
+    prisma.promotionClick.create({
+      data: {
+        promotionId: data.promotionId,
+        buttonType: data.buttonType,
+        userAgent: data.userAgent,
+        referrer: data.referrer,
+        device: getDeviceType(data.userAgent),
+      }
+    }).catch(error => {
+      console.error('Promotion click tracking error:', error);
     });
   } catch (error) {
     console.error('Promotion click tracking error:', error);
@@ -86,16 +87,16 @@ export async function trackPromotionView(data: {
   referrer?: string | null | undefined;
 }): Promise<void> {
   try {
-    setImmediate(async () => {
-      await prisma.promotionView.create({
-        data: {
-          promotionId: data.promotionId,
-          viewType: data.viewType,
-          userAgent: data.userAgent,
-          referrer: data.referrer,
-          device: getDeviceType(data.userAgent),
-        }
-      });
+    prisma.promotionView.create({
+      data: {
+        promotionId: data.promotionId,
+        viewType: data.viewType,
+        userAgent: data.userAgent,
+        referrer: data.referrer,
+        device: getDeviceType(data.userAgent),
+      }
+    }).catch(error => {
+      console.error('Promotion view tracking error:', error);
     });
   } catch (error) {
     console.error('Promotion view tracking error:', error);
