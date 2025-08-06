@@ -28,14 +28,14 @@ export async function getCountryFromIP(ip: string): Promise<string | null> {
 }
 
 // Non-blocking page view tracking
-export async function trackPageView(data: {
+export function trackPageView(data: {
   page: string;
   userAgent?: string | null | undefined;
   referrer?: string | null | undefined;
   sessionId?: string | null | undefined;
-}): Promise<void> {
-  try {
-    // Use Promise instead of setImmediate to avoid connection pool issues
+}): void {
+  // Fire and forget - completely non-blocking
+  setImmediate(() => {
     prisma.analytics.create({
       data: {
         page: data.page,
@@ -49,20 +49,18 @@ export async function trackPageView(data: {
       // Silently fail to not impact user experience
       console.error('Analytics tracking error:', error);
     });
-  } catch (error) {
-    // Silently fail to not impact user experience
-    console.error('Analytics tracking error:', error);
-  }
+  });
 }
 
 // Non-blocking promotion click tracking
-export async function trackPromotionClick(data: {
+export function trackPromotionClick(data: {
   promotionId: string;
   buttonType: string;
   userAgent?: string | null | undefined;
   referrer?: string | null | undefined;
-}): Promise<void> {
-  try {
+}): void {
+  // Fire and forget - completely non-blocking
+  setImmediate(() => {
     prisma.promotionClick.create({
       data: {
         promotionId: data.promotionId,
@@ -74,19 +72,18 @@ export async function trackPromotionClick(data: {
     }).catch(error => {
       console.error('Promotion click tracking error:', error);
     });
-  } catch (error) {
-    console.error('Promotion click tracking error:', error);
-  }
+  });
 }
 
 // Non-blocking promotion view tracking
-export async function trackPromotionView(data: {
+export function trackPromotionView(data: {
   promotionId: string;
   viewType: string;
   userAgent?: string | null | undefined;
   referrer?: string | null | undefined;
-}): Promise<void> {
-  try {
+}): void {
+  // Fire and forget - completely non-blocking
+  setImmediate(() => {
     prisma.promotionView.create({
       data: {
         promotionId: data.promotionId,
@@ -98,9 +95,7 @@ export async function trackPromotionView(data: {
     }).catch(error => {
       console.error('Promotion view tracking error:', error);
     });
-  } catch (error) {
-    console.error('Promotion view tracking error:', error);
-  }
+  });
 }
 
 // Helper function to parse price string to number
