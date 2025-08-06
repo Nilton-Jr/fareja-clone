@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     requestBody = body;
     console.log('Request body received:', body);
     
-    const { title, price, price_from, storeName, affiliateLink, coupon } = body;
+    const { title, price, price_from, storeName, affiliateLink, coupon, forceNewPromotion } = body;
 
     if (!title || !price || !storeName || !affiliateLink) {
       console.log('Missing required fields:', { title: !!title, price: !!price, storeName: !!storeName, affiliateLink: !!affiliateLink });
@@ -77,74 +77,82 @@ export async function POST(request: NextRequest) {
       console.log('Using default image');
     }
 
-    // Check if affiliate link already exists
-    console.log('Checking for existing affiliate link...');
-    const existingPromotion = await prisma.promotion.findUnique({
-      where: { affiliateLink }
-    });
+    // Check if affiliate link already exists (skip if forceNewPromotion is true)
+    if (!forceNewPromotion) {
+      console.log('Checking for existing affiliate link...');
+      const existingPromotion = await prisma.promotion.findUnique({
+        where: { affiliateLink }
+      });
 
-    if (existingPromotion) {
-      console.log('Affiliate link already exists, updating with optimized image:', existingPromotion.id);
-      
-      // Atualizar promoção existente com nova imagem se diferente
-      if (existingPromotion.imageUrl !== imageUrl) {
-        console.log('Updating existing promotion with new image...');
-        const updatedPromotion = await prisma.promotion.update({
-          where: { id: existingPromotion.id },
-          data: { imageUrl }
-        });
-        console.log('Existing promotion updated with new image');
+      if (existingPromotion) {
+        console.log('Affiliate link already exists, updating with optimized image:', existingPromotion.id);
+        
+        // Atualizar promoção existente com nova imagem se diferente
+        if (existingPromotion.imageUrl !== imageUrl) {
+          console.log('Updating existing promotion with new image...');
+          const updatedPromotion = await prisma.promotion.update({
+            where: { id: existingPromotion.id },
+            data: { imageUrl }
+          });
+          console.log('Existing promotion updated with new image');
+          
+          return NextResponse.json({
+            ...updatedPromotion,
+            siteLink: `${request.nextUrl.origin}/p/${updatedPromotion.shortId}`
+          }, { status: 200 });
+        }
         
         return NextResponse.json({
-          ...updatedPromotion,
-          siteLink: `${request.nextUrl.origin}/p/${updatedPromotion.shortId}`
-        }, { status: 200 });
+          ...existingPromotion,
+          siteLink: `${request.nextUrl.origin}/p/${existingPromotion.shortId}`
+        }, { status: 200 }); // Return 200 instead of 201 for existing
       }
-      
-      return NextResponse.json({
-        ...existingPromotion,
-        siteLink: `${request.nextUrl.origin}/p/${existingPromotion.shortId}`
-      }, { status: 200 }); // Return 200 instead of 201 for existing
+    } else {
+      console.log('forceNewPromotion=true: Skipping affiliate link duplicate check for daily renewal...');
     }
 
-    // Check if same title exists today
-    console.log('Checking for duplicate title today...');
-    const today = new Date();
-    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
-    
-    const duplicateTitle = await prisma.promotion.findFirst({
-      where: {
-        title,
-        createdAt: {
-          gte: startOfDay,
-          lt: endOfDay
-        }
-      }
-    });
-
-    if (duplicateTitle) {
-      console.log('Title already exists today, updating with optimized image:', duplicateTitle.id);
+    // Check if same title exists today (skip if forceNewPromotion is true)
+    if (!forceNewPromotion) {
+      console.log('Checking for duplicate title today...');
+      const today = new Date();
+      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
       
-      // Atualizar promoção existente com nova imagem se diferente
-      if (duplicateTitle.imageUrl !== imageUrl) {
-        console.log('Updating duplicate title promotion with new image...');
-        const updatedPromotion = await prisma.promotion.update({
-          where: { id: duplicateTitle.id },
-          data: { imageUrl }
-        });
-        console.log('Duplicate title promotion updated with new image');
+      const duplicateTitle = await prisma.promotion.findFirst({
+        where: {
+          title,
+          createdAt: {
+            gte: startOfDay,
+            lt: endOfDay
+          }
+        }
+      });
+
+      if (duplicateTitle) {
+        console.log('Title already exists today, updating with optimized image:', duplicateTitle.id);
+        
+        // Atualizar promoção existente com nova imagem se diferente
+        if (duplicateTitle.imageUrl !== imageUrl) {
+          console.log('Updating duplicate title promotion with new image...');
+          const updatedPromotion = await prisma.promotion.update({
+            where: { id: duplicateTitle.id },
+            data: { imageUrl }
+          });
+          console.log('Duplicate title promotion updated with new image');
+          
+          return NextResponse.json({
+            ...updatedPromotion,
+            siteLink: `${request.nextUrl.origin}/p/${updatedPromotion.shortId}`
+          }, { status: 200 });
+        }
         
         return NextResponse.json({
-          ...updatedPromotion,
-          siteLink: `${request.nextUrl.origin}/p/${updatedPromotion.shortId}`
-        }, { status: 200 });
+          ...duplicateTitle,
+          siteLink: `${request.nextUrl.origin}/p/${duplicateTitle.shortId}`
+        }, { status: 200 }); // Return existing promotion with same title
       }
-      
-      return NextResponse.json({
-        ...duplicateTitle,
-        siteLink: `${request.nextUrl.origin}/p/${duplicateTitle.shortId}`
-      }, { status: 200 }); // Return existing promotion with same title
+    } else {
+      console.log('forceNewPromotion=true: Skipping title duplicate check for daily renewal...');
     }
 
     // Save to database
