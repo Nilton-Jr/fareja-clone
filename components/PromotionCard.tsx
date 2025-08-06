@@ -3,6 +3,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { getStoreLogo } from '@/lib/storeLogo';
 import { trackPromotionClick, trackPromotionView } from '@/hooks/useAnalytics';
+import { getCloudinaryUrl } from '@/lib/cloudinary';
+import { normalizeImageUrl, needsProxy, getProxiedImageUrl, getAbsoluteImageUrl } from '@/lib/imageProxy';
 
 interface Promotion {
   id: string;
@@ -82,11 +84,36 @@ export default function PromotionCard({ promotion }: PromotionCardProps) {
         <div className="cursor-pointer flex-grow flex flex-col">
           <div className="relative h-48 w-full bg-white flex items-center justify-center">
             <Image
-              src={promotion.imageUrl}
+              src={(() => {
+                // Definir baseUrl (mesmo padrão usado na página individual)
+                const isProd = typeof window !== 'undefined' ? window.location.hostname === 'fareja.ai' || window.location.hostname === 'www.fareja.ai' 
+                              : process.env.NODE_ENV === 'production';
+                const rawBaseUrl = isProd ? 'https://www.fareja.ai' 
+                                  : process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+                const baseUrl = rawBaseUrl.replace('http://', 'https://');
+                
+                // Normalizar URL primeiro
+                const normalized = normalizeImageUrl(promotion.imageUrl, baseUrl);
+                
+                // Se for Cloudinary, usar URL direta com transformações (bypass Next.js proxy)
+                if (normalized.includes('cloudinary.com')) {
+                  console.log('🎯 PromotionCard: Using direct Cloudinary URL (bypass Next.js proxy):', normalized);
+                  return getCloudinaryUrl(normalized);
+                }
+                
+                // Se for imagem externa (Amazon, etc), usar proxy Next.js
+                if (needsProxy(normalized)) {
+                  return getProxiedImageUrl(normalized);
+                }
+                
+                // Se for imagem local, obter URL absoluta
+                return getAbsoluteImageUrl(normalized, baseUrl);
+              })()}
               alt={promotion.title}
               fill
               className="object-contain p-2"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+              unoptimized={promotion.imageUrl.includes('cloudinary.com')} // Bypass Next.js optimization for Cloudinary
             />
             {/* Store Logo */}
             <div className="absolute bottom-2 right-2">
