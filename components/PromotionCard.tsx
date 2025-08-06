@@ -3,8 +3,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { getStoreLogo } from '@/lib/storeLogo';
 import { trackPromotionClick, trackPromotionView } from '@/hooks/useAnalytics';
-import { getCloudinaryUrl } from '@/lib/cloudinary';
-import { normalizeImageUrl, needsProxy, getProxiedImageUrl, getAbsoluteImageUrl } from '@/lib/imageProxy';
+import { getCloudinaryUrl } from '@/lib/cloudinaryClient';
+import { normalizeImageUrl, getAbsoluteImageUrl } from '@/lib/urlNormalizer';
+import { needsProxy, getProxiedImageUrl } from '@/lib/imageProxy';
 
 interface Promotion {
   id: string;

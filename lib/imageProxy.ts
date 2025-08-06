@@ -50,3 +50,51 @@ export function needsProxy(url: string): boolean {
   
   return !noProxyPatterns.some(pattern => url.includes(pattern));
 }
+
+/**
+ * Normaliza URL de imagem para formato padrão
+ */
+export function normalizeImageUrl(url: string, baseUrl: string): string {
+  if (!url) return '';
+  
+  // Se já for uma URL absoluta, retornar como está
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  
+  // Se for data URL, retornar como está
+  if (url.startsWith('data:')) {
+    return url;
+  }
+  
+  // Se for URL relativa, converter para absoluta
+  if (url.startsWith('/')) {
+    return `${baseUrl}${url}`;
+  }
+  
+  // Se não tiver protocolo, assumir https
+  if (!url.includes('://')) {
+    return `https://${url}`;
+  }
+  
+  return url;
+}
+
+/**
+ * Converte URL relativa em URL absoluta
+ */
+export function getAbsoluteImageUrl(url: string, baseUrl: string): string {
+  if (!url) return '';
+  
+  // Se já for absoluta, retornar como está
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+    return url;
+  }
+  
+  // Se for relativa, converter para absoluta
+  if (url.startsWith('/')) {
+    return `${baseUrl}${url}`;
+  }
+  
+  return `${baseUrl}/${url}`;
+}
