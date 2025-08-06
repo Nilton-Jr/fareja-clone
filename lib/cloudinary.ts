@@ -33,28 +33,17 @@ export async function uploadToCloudinary(
       tags: ['produto', 'whatsapp'],
     });
 
-    // Construir URL com transformações
-    // Para página do produto: imagem quadrada que não corta
-    const transformedUrl = cloudinary.url(result.public_id, {
-      transformation: [
-        {
-          width: 800,
-          height: 800,
-          crop: 'pad',  // 'pad' adiciona padding ao invés de cortar
-          background: 'white',
-          gravity: 'center',
-          quality: 'auto:good',
-          format: 'jpg',
-        }
-      ],
+    // Construir URL simples sem transformações (serão aplicadas via Next.js Image ou dinamicamente)
+    const baseUrl = cloudinary.url(result.public_id, {
       secure: true,
+      transformation: [] // Sem transformações na URL base
     });
 
-    console.log(`✅ Upload successful: ${transformedUrl}`);
+    console.log(`✅ Upload successful: ${baseUrl}`);
 
     return {
       success: true,
-      url: transformedUrl,  // Retornar URL transformada
+      url: baseUrl,  // Retornar URL base limpa
       publicId: result.public_id,
     };
 
@@ -83,6 +72,12 @@ export function getCloudinaryUrl(url: string, options?: {
     return url;
   }
 
+  // Se a URL já contém transformações, não adicionar mais
+  if (url.includes('/upload/c_') || url.includes('/upload/w_') || url.match(/\/upload\/[^\/]*c_/)) {
+    console.log('🔄 URL already has transformations, returning as-is:', url);
+    return url;
+  }
+
   // Construir transformação inline na URL
   const width = options?.width || 800;
   const height = options?.height || 800;
@@ -93,7 +88,10 @@ export function getCloudinaryUrl(url: string, options?: {
   const transformations = `c_${crop},w_${width},h_${height},b_white,g_center,q_auto:good,f_${format}`;
   
   // Substituir /upload/ por /upload/{transformações}/
-  return url.replace('/upload/', `/upload/${transformations}/`);
+  const transformedUrl = url.replace('/upload/', `/upload/${transformations}/`);
+  console.log('🎨 Added transformations to Cloudinary URL:', transformedUrl);
+  
+  return transformedUrl;
 }
 
 /**
@@ -104,11 +102,20 @@ export function getCloudinaryWhatsAppUrl(url: string): string {
     return url;
   }
 
+  // Se a URL já contém transformações, não adicionar mais
+  if (url.includes('/upload/c_') || url.includes('/upload/w_') || url.match(/\/upload\/[^\/]*c_/)) {
+    console.log('🔄 WhatsApp URL already has transformations, returning as-is:', url);
+    return url;
+  }
+
   // Transformações específicas para WhatsApp
   const transformations = 'c_pad,w_1200,h_630,b_white,g_center,q_auto:good,f_jpg';
   
   // Substituir /upload/ por /upload/{transformações}/
-  return url.replace('/upload/', `/upload/${transformations}/`);
+  const transformedUrl = url.replace('/upload/', `/upload/${transformations}/`);
+  console.log('📱 Added WhatsApp transformations to Cloudinary URL:', transformedUrl);
+  
+  return transformedUrl;
 }
 
 /**
