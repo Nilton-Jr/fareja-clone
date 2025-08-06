@@ -127,8 +127,9 @@ export default async function ProductPage({ params }: PageProps) {
                     // Normalizar URL primeiro
                     const normalized = normalizeImageUrl(promotion.imageUrl, baseUrl);
                     
-                    // Se for Cloudinary, aplicar transformações
+                    // Se for Cloudinary, usar URL direta com transformações (bypass Next.js proxy)
                     if (normalized.includes('cloudinary.com')) {
+                      console.log('🎯 Using direct Cloudinary URL (bypass Next.js proxy):', normalized);
                       return getCloudinaryUrl(normalized);
                     }
                     
@@ -145,6 +146,7 @@ export default async function ProductPage({ params }: PageProps) {
                   className="object-contain p-4 md:p-6"
                   sizes="(max-width: 768px) 100vw, 50vw"
                   priority
+                  unoptimized={promotion.imageUrl.includes('cloudinary.com')} // Bypass Next.js optimization for Cloudinary
                 />
               </div>
 
