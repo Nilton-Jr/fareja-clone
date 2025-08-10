@@ -287,10 +287,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     // IMPORTANTE: Para WhatsApp, usar URLs diretas (não proxy) pois WhatsApp precisa acessar diretamente
     let secureImageUrl: string;
     
-    // Se for Cloudinary, usar URL direta com transformações para WhatsApp
+    // Se for Cloudinary, usar nossa CDN URL para WhatsApp confiar mais
     if (normalizedImageUrl.includes('cloudinary.com')) {
-      secureImageUrl = getCloudinaryWhatsAppUrl(normalizedImageUrl);
-      console.log('Using direct Cloudinary WhatsApp URL for meta tags:', secureImageUrl);
+      // Extrair o path depois de /upload/ para usar com nossa CDN
+      const uploadIndex = normalizedImageUrl.indexOf('/upload/');
+      if (uploadIndex !== -1) {
+        const cloudinaryPath = normalizedImageUrl.substring(uploadIndex + 8); // Skip '/upload/'
+        // Usar nossa CDN com transformações para WhatsApp (1200x630)
+        secureImageUrl = `${baseUrl}/cdn/image/upload/c_pad,w_1200,h_630,b_white,g_center,q_auto:good,f_jpg/${cloudinaryPath}`;
+        console.log('Using CDN URL for WhatsApp meta tags:', secureImageUrl);
+      } else {
+        // Fallback se não encontrar /upload/
+        secureImageUrl = getCloudinaryWhatsAppUrl(normalizedImageUrl);
+        console.log('Fallback to direct Cloudinary URL:', secureImageUrl);
+      }
     } else {
       // Para outras imagens, usar proxy Next.js
       const proxiedUrl = getProxiedImageUrl(normalizedImageUrl, 1200, 85);
