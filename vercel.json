@@ -1,4 +1,10 @@
 {
   "buildCommand": "npx prisma generate && npm run build",
-  "installCommand": "npm install && npx prisma generate"
+  "installCommand": "npm install && npx prisma generate",
+  "rewrites": [
+    {
+      "source": "/cdn/:match*",
+      "destination": "https://res.cloudinary.com/ds3bntpck/:match*"
+    }
+  ]
 }
