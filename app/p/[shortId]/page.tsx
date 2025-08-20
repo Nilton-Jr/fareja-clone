@@ -259,9 +259,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     // URL segura adicional para WhatsApp
     const secureImageUrl = imageUrl.replace('http://', 'https://');
     
-    // Nova URL otimizada para WhatsApp - endpoint que gera imagem PNG real
-    const ogImageUrl = `${baseUrl}/api/og-image/${shortId}`;
-    const secureOgImageUrl = ogImageUrl.replace('http://', 'https://');
+    // URL otimizada especificamente para WhatsApp preview
+    const whatsappOptimizedImageUrl = `${baseUrl}/api/whatsapp-image/${shortId}`;
+    const secureWhatsappImageUrl = whatsappOptimizedImageUrl.replace('http://', 'https://');
+    
+    // SVG image for better WhatsApp compatibility
+    const whatsappSvgImageUrl = `${baseUrl}/api/whatsapp-png/${shortId}`;
+    const secureWhatsappSvgImageUrl = whatsappSvgImageUrl.replace('http://', 'https://');
 
     return {
       title: title,
@@ -275,18 +279,34 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         url: pageUrl,
         siteName: 'Fareja - As Melhores Promoções',
         locale: 'pt_BR',
-        type: 'website', // Mudando para 'website' que é mais compatível
+        type: 'article',
         publishedTime: promotion.createdAt.toISOString(),
         
-        // IMAGEM ÚNICA OTIMIZADA - Seguindo recomendações do Gemini
+        // IMAGENS OTIMIZADAS PARA WHATSAPP - SEGUINDO MELHORES PRÁTICAS
         images: [
           {
-            url: ogImageUrl,
-            secureUrl: secureOgImageUrl,
+            url: whatsappSvgImageUrl,
+            secureUrl: secureWhatsappSvgImageUrl,
             width: 1200,
             height: 630,
             alt: promotion.title,
-            type: 'image/png', // PNG real gerado pelo @vercel/og
+            type: 'image/svg+xml',
+          },
+          {
+            url: whatsappOptimizedImageUrl,
+            secureUrl: secureWhatsappImageUrl,
+            width: 1200,
+            height: 630,
+            alt: promotion.title,
+            type: 'text/html',
+          },
+          {
+            url: imageUrl,
+            secureUrl: secureImageUrl,
+            width: 1200,
+            height: 630,
+            alt: promotion.title,
+            type: 'image/jpeg',
           }
         ],
         section: 'Promoções e Ofertas',
