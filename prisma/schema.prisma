@@ -18,4 +18,54 @@ model Promotion {
   imageUrl      String
   coupon        String?
   createdAt     DateTime @default(now())
+  
+  clicks        PromotionClick[]
+  views         PromotionView[]
+}
+
+model Analytics {
+  id        String   @id @default(cuid())
+  page      String
+  userAgent String?
+  referrer  String?
+  country   String?
+  city      String?
+  device    String?
+  timestamp DateTime @default(now())
+  sessionId String?
+  duration  Int?
+  
+  @@index([page])
+  @@index([timestamp])
+  @@index([sessionId])
+}
+
+model PromotionClick {
+  id          String    @id @default(cuid())
+  promotionId String
+  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  timestamp   DateTime  @default(now())
+  userAgent   String?
+  referrer    String?
+  country     String?
+  device      String?
+  buttonType  String?
+  
+  @@index([promotionId])
+  @@index([timestamp])
+}
+
+model PromotionView {
+  id          String    @id @default(cuid())
+  promotionId String
+  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  timestamp   DateTime  @default(now())
+  userAgent   String?
+  referrer    String?
+  country     String?
+  device      String?
+  viewType    String?
+  
+  @@index([promotionId])
+  @@index([timestamp])
 }
