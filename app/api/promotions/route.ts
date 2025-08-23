@@ -94,12 +94,24 @@ export async function POST(request: NextRequest) {
 
     // Save to database
     console.log('Saving to database...');
+    
+    // Converter preços para números e formatar corretamente
+    const formatPrice = (priceValue: any): string => {
+      if (!priceValue) return '';
+      // Se já é string, extrair apenas números e pontos
+      const cleanPrice = typeof priceValue === 'string' 
+        ? priceValue.replace(/[^\d.,]/g, '').replace(',', '.') 
+        : String(priceValue);
+      const numPrice = parseFloat(cleanPrice);
+      return isNaN(numPrice) ? cleanPrice : numPrice.toFixed(2);
+    };
+    
     const promotion = await prisma.promotion.create({
       data: {
         shortId,
         title,
-        price: price.toFixed(2),
-        price_from: price_from ? price_from.toFixed(2) : null,
+        price: formatPrice(price),
+        price_from: price_from ? formatPrice(price_from) : null,
         storeName,
         affiliateLink,
         imageUrl,
