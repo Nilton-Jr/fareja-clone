@@ -248,68 +248,43 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
     description += ` | Clique e aproveite!`;
 
+    // DIAGNÓSTICO 2: Usar apenas a imagem DIRETA da Amazon/ML (como o Pechinchou faz)
     // Garantir que a imagem seja absoluta e HTTPS para WhatsApp
     let imageUrl = promotion.imageUrl;
+    
+    // Se a imagem já é uma URL completa da Amazon/ML, usar ela diretamente
+    // Caso contrário, construir URL absoluta
     if (!imageUrl.startsWith('http')) {
       imageUrl = `${baseUrl}${promotion.imageUrl}`;
-    } else {
-      imageUrl = imageUrl.replace('http://', 'https://');
     }
     
-    // URL segura adicional para WhatsApp
-    const secureImageUrl = imageUrl.replace('http://', 'https://');
-    
-    // URL otimizada especificamente para WhatsApp preview
-    const whatsappOptimizedImageUrl = `${baseUrl}/api/whatsapp-image/${shortId}`;
-    const secureWhatsappImageUrl = whatsappOptimizedImageUrl.replace('http://', 'https://');
-    
-    // SVG image for better WhatsApp compatibility
-    const whatsappSvgImageUrl = `${baseUrl}/api/whatsapp-png/${shortId}`;
-    const secureWhatsappSvgImageUrl = whatsappSvgImageUrl.replace('http://', 'https://');
+    // Forçar HTTPS para compatibilidade com WhatsApp
+    imageUrl = imageUrl.replace('http://', 'https://');
 
     return {
+      // DIAGNÓSTICO 3: Meta tags essenciais primeiro (ordem importa para WhatsApp)
+      metadataBase: new URL(baseUrl), // Garantir URLs absolutas
       title: title,
       description: description,
-      keywords: `promoção, oferta, desconto, ${promotion.storeName}, ${promotion.title}, cupom, barato`,
       
-      // OPEN GRAPH OTIMIZADO PARA WHATSAPP
+      // OPEN GRAPH OTIMIZADO PARA WHATSAPP - SIMPLIFICADO
       openGraph: {
+        type: 'website', // Mudando de 'article' para 'website' (mais compatível)
         title: title,
         description: description,
         url: pageUrl,
-        siteName: 'Fareja - As Melhores Promoções',
+        siteName: 'Fareja',
         locale: 'pt_BR',
-        type: 'article',
-        publishedTime: promotion.createdAt.toISOString(),
         
-        // IMAGENS OTIMIZADAS PARA WHATSAPP - SEGUINDO MELHORES PRÁTICAS
+        // DIAGNÓSTICO 2: APENAS UMA IMAGEM - URL DIRETA (como Pechinchou)
         images: [
           {
-            url: whatsappSvgImageUrl,
-            secureUrl: secureWhatsappSvgImageUrl,
+            url: imageUrl, // URL direta da Amazon/ML
             width: 1200,
             height: 630,
             alt: promotion.title,
-            type: 'image/svg+xml',
-          },
-          {
-            url: whatsappOptimizedImageUrl,
-            secureUrl: secureWhatsappImageUrl,
-            width: 1200,
-            height: 630,
-            alt: promotion.title,
-            type: 'text/html',
-          },
-          {
-            url: imageUrl,
-            secureUrl: secureImageUrl,
-            width: 1200,
-            height: 630,
-            alt: promotion.title,
-            type: 'image/jpeg',
           }
         ],
-        section: 'Promoções e Ofertas',
       },
       
       // TWITTER CARD PARA OUTRAS PLATAFORMAS
