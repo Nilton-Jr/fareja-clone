@@ -87,13 +87,12 @@ export default async function ProductPage({ params }: PageProps) {
             <div className="bg-white rounded-lg shadow-lg overflow-hidden">
               {/* Product Image */}
               <div className="relative h-80 w-full bg-white flex items-center justify-center">
-                <Image
+                {/* CORREÇÃO: Usar img tag direta para evitar Vercel Image Optimization paywall */}
+                <img
                   src={promotion.imageUrl}
                   alt={promotion.title}
-                  fill
-                  className="object-contain p-6"
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                  priority
+                  className="object-contain p-6 max-h-full max-w-full"
+                  loading="lazy"
                 />
               </div>
 
